@@ -13,6 +13,7 @@ namespace adEditor
     public partial class MainForm : Form
     {
         private TreeNode varNode = null;
+        private TreeNode eventNode = null;
         public MainForm()
         {
             InitializeComponent();
@@ -51,7 +52,7 @@ namespace adEditor
             n.Tag = new TagElement(false);
             n.ImageIndex = n.SelectedImageIndex = 7;
             TreeNode g = n;
-            metaData.Nodes.Add(n);
+            metaData.Nodes.Add(n);            
 
             n = new TreeNode("Variables");
             n.Tag = new TagElement("+V");
@@ -63,6 +64,7 @@ namespace adEditor
             n.Tag = new TagElement("+E");
             n.ImageIndex = n.SelectedImageIndex = 9;
             g.Nodes.Add(n);
+            eventNode = n;
 
             TreeNode data = new TreeNode("Data");
             data.Tag = new TagElement("+D");
@@ -191,12 +193,14 @@ namespace adEditor
                         GuardsForm gf = populateGuardsForm();
                         if (te != null)
                         {
-                            gf.Tag = te;
+                            gf.Tag = te.data;
                         }
                         gf.ShowDialog();
-                        if (gf.Tag != null)
+                        if(gf.DialogResult == DialogResult.OK)
                         {
-                            te = (TagElement)gf.Tag;
+                            te.data = gf.Tag;
+
+                            computerVarRef();
                         }
                         gf.Dispose();
                         break;
@@ -273,16 +277,18 @@ namespace adEditor
         {
             GuardsForm gf = populateGuardsForm();
 
-            TagElement te = (TagElement)treeViewItem.SelectedNode.Tag;
-            gf.Tag = te;
             gf.ShowDialog();
-            if(gf.Tag!=null)
+            if(gf.DialogResult == DialogResult.OK && gf.Tag!=null)
             {
-                if(treeViewItem.SelectedNode.Nodes.Count==0)
+                Guard g = (Guard)gf.Tag;
+                if (treeViewItem.SelectedNode.Nodes.Count==0)
                 {
                     TreeNode tn = new TreeNode("onRead");
-                    tn.Tag = new TagElement("OR", "onRead", gf.Tag, true);
+                    tn.Tag = new TagElement("OR", "onRead", g, true);
                     treeViewItem.SelectedNode.Nodes.Add(tn);
+                    treeViewItem.SelectedNode.ExpandAll();
+
+                    computerVarRef();
                 }
 
             }
@@ -310,11 +316,31 @@ namespace adEditor
                 if (_te.type == "VC")
                 {
                     RefData rd = (RefData)_te.data;
-                    gf.addVar(_te.name, (decimal)rd.data);
+                    gf.addVar(_te.name, rd.guid, (decimal)rd.data);
                 }
             }
 
             return gf;
+        }
+
+        private void computerVarRef()
+        {
+            foreach(TreeNode v in varNode.Nodes)
+            {               
+                int refCount = 0;
+                
+                TagElement tev = (TagElement)v.Tag;
+                RefData rd = (RefData)tev.data;
+                foreach (TreeNode g in eventNode.Nodes)
+                {
+                    TagElement teg = (TagElement)g.Tag;
+                    Guard guard = (Guard)teg.data;
+                    if (guard.varDateGuid == rd.guid || guard.varCounterGuid == rd.guid) refCount++;                    
+                }
+
+                rd.refCount = refCount;
+                v.Text = tev.name + "= " + tev.data;
+            }
         }
     }
 }

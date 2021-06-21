@@ -10,16 +10,19 @@ namespace adEditor
     {
         public object data = null;
         public int refCount = 0;
+        public string guid = null;
 
         public RefData(object data)
         {
             this.data = data;
+            this.guid = Guid.NewGuid().ToString();
         }
 
         public RefData(object data, int refCount)
         {
             this.data = data;
             this.refCount = refCount;
+            this.guid = Guid.NewGuid().ToString();
         }
 
         public override string ToString()

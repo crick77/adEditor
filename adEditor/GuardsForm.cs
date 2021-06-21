@@ -12,7 +12,7 @@ namespace adEditor
 {
     public partial class GuardsForm : Form
     {
-        private TagElement te;
+        private Guard g;
 
         public GuardsForm()
         {
@@ -32,36 +32,35 @@ namespace adEditor
 
         private void bOk_Click(object sender, EventArgs e)
         {
-            if (te != null)
+            g = null;
+            if (cbDecrease.Checked)
             {
-                Guard g = null;
-                if (cbDecrease.Checked)
-                {
-                    g = new Guard();
-                    g.decreaseQty = (int)nudCounter.Value;
-                    g.varIndex = cbVars.SelectedIndex;
-                }
-                if (cbExpire.Checked)
-                {
-                    g = (g != null) ? g : new Guard();
-                    g.dateIndex = cbDates.SelectedIndex;
-                }
-
-                te.data = g;
-                this.Tag = te;
+                g = new Guard();
+                g.decreaseQty = (int)nudCounter.Value;
+                ComboBoxVar cbv = (ComboBoxVar)cbVars.SelectedItem;
+                g.varCounterGuid = cbv.varGuid;
             }
+            if (cbExpire.Checked)
+            {
+                g = (g != null) ? g : new Guard();
+                ComboBoxVar cbv = (ComboBoxVar)cbDates.SelectedItem;
+                g.varDateGuid = cbv.varGuid;
+            }
+            
+            this.Tag = g;
+            this.DialogResult = DialogResult.OK;
             Close();
         }
 
-        public void addVar(string varName, decimal max)
+        public void addVar(string varName, string varGuid, decimal max)
         {
-            ComboBoxVar cbv = new ComboBoxVar(varName, max);
+            ComboBoxVar cbv = new ComboBoxVar(varName, varGuid, max);
             cbVars.Items.Add(cbv);
         }
 
-        public void addExpire(string varName, DateTime date)
+        public void addExpire(string varName, string varGuid, DateTime date)
         {
-            ComboBoxVar cbv = new ComboBoxVar(varName, date);
+            ComboBoxVar cbv = new ComboBoxVar(varName, varGuid, date);
             cbDates.Items.Add(cbv);
         }
 
@@ -84,46 +83,62 @@ namespace adEditor
             cbExpire.Enabled = false;
             nudCounter.Enabled = false;
 
-            te = (TagElement)this.Tag;
-            if (te != null)
+            g = (Guard)this.Tag;
+            if (g != null)
             {
-                Guard g = (Guard)te.data;
-                if (g != null)
+                if (g.varCounterGuid != null)
                 {
-                    if (g.varIndex >= 0)
-                    {
-                        cbDecrease.Checked = true;
-                        cbDecrease.Enabled = true;
-                        cbVars.Enabled = true;
-                        cbVars.SelectedIndex = g.varIndex;
-                        decimal maxVal = (decimal)((ComboBoxVar)cbVars.SelectedItem).varData;
-                        nudCounter.Enabled = true;
-                        nudCounter.Value = g.decreaseQty;
-                        nudCounter.Maximum = maxVal;
-                    }
-                    else
-                    {
-                        cbDecrease.Checked = false;
-                        cbVars.Enabled = false;
-                        nudCounter.Enabled = false;
-                    }
+                    cbDecrease.Checked = true;
+                    cbDecrease.Enabled = true;
+                    cbVars.Enabled = true;                                        
+                    nudCounter.Enabled = true;
+                    nudCounter.Value = g.decreaseQty;                    
 
-                    if (g.dateIndex >= 0)
+                    cbVars.SelectedIndex = 0;
+                    for (int idx = 0;idx < cbVars.Items.Count;idx++)
                     {
-                        cbExpire.Checked = true;
-                        cbExpire.Enabled = true;
-                        cbDates.SelectedIndex = g.dateIndex;
-                        cbDates.Enabled = true;
+                        ComboBoxVar cbv = (ComboBoxVar)cbVars.Items[idx];
+                        if (cbv.varGuid == g.varCounterGuid)
+                        {
+                            cbVars.SelectedIndex = idx;
+                            decimal maxVal = (decimal)((ComboBoxVar)cbVars.SelectedItem).varData;
+                            nudCounter.Maximum = maxVal;
+                            break;
+                        }
                     }
-                    else
-                    {
-                        cbExpire.Checked = false;
-                        cbDates.Enabled = false;
-                    }
-
-                    return;
                 }
+                else
+                {
+                    cbDecrease.Checked = false;
+                    cbVars.Enabled = false;
+                    nudCounter.Enabled = false;
+                }
+
+                if (g.varDateGuid != null)
+                {
+                    cbExpire.Checked = true;
+                    cbExpire.Enabled = true;                    
+                    cbDates.SelectedIndex = 0;
+                    for (int idx = 0; idx < cbDates.Items.Count; idx++)
+                    {
+                        ComboBoxVar cbv = (ComboBoxVar)cbVars.Items[idx];
+                        if (cbv.varGuid == g.varDateGuid)
+                        {
+                            cbDates.SelectedIndex = idx;
+                            break;
+                        }
+                    }
+                    cbDates.Enabled = true;
+                }
+                else
+                {
+                    cbExpire.Checked = false;
+                    cbDates.Enabled = false;
+                }
+
+                return;
             }
+
 
             cbDecrease.Enabled = cbVars.Items.Count > 0;
             if (cbVars.Items.Count > 0)
@@ -137,6 +152,11 @@ namespace adEditor
             {
                 cbDates.SelectedIndex = 0;
             }
+        }
+
+        private void bCancel_Click(object sender, EventArgs e)
+        {
+            this.DialogResult = DialogResult.Cancel;
         }
     }
 }

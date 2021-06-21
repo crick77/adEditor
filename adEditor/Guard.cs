@@ -8,8 +8,8 @@ namespace adEditor
 {
     class Guard
     {
-        public int varIndex = -1;
+        public string varCounterGuid = null;
         public decimal decreaseQty = 0;
-        public int dateIndex = -1; 
+        public string varDateGuid = null; 
     }
 }

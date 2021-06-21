@@ -9,11 +9,13 @@ namespace adEditor
     class ComboBoxVar
     {
         public string varName;
+        public string varGuid;
         public object varData;
 
-        public ComboBoxVar(string varName, object varData)
+        public ComboBoxVar(string varName, string varGuid, object varData)
         {
             this.varName = varName;
+            this.varGuid = varGuid;
             this.varData = varData;
         }
 
