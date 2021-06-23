@@ -30,10 +30,10 @@ namespace adEditor
         private void InitializeComponent()
         {
             this.gbEdit = new System.Windows.Forms.GroupBox();
+            this.lValue = new System.Windows.Forms.Label();
+            this.tbValue = new System.Windows.Forms.TextBox();
             this.bSave = new System.Windows.Forms.Button();
             this.bCancel = new System.Windows.Forms.Button();
-            this.tbValue = new System.Windows.Forms.TextBox();
-            this.lValue = new System.Windows.Forms.Label();
             this.gbEdit.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -47,6 +47,23 @@ namespace adEditor
             this.gbEdit.TabIndex = 0;
             this.gbEdit.TabStop = false;
             this.gbEdit.Text = "groupBox1";
+            // 
+            // lValue
+            // 
+            this.lValue.AutoSize = true;
+            this.lValue.Location = new System.Drawing.Point(17, 35);
+            this.lValue.Name = "lValue";
+            this.lValue.Size = new System.Drawing.Size(40, 13);
+            this.lValue.TabIndex = 1;
+            this.lValue.Text = "&Valore:";
+            // 
+            // tbValue
+            // 
+            this.tbValue.Location = new System.Drawing.Point(63, 32);
+            this.tbValue.Name = "tbValue";
+            this.tbValue.Size = new System.Drawing.Size(622, 20);
+            this.tbValue.TabIndex = 0;
+            this.tbValue.KeyDown += new System.Windows.Forms.KeyEventHandler(this.tbValue_KeyDown);
             // 
             // bSave
             // 
@@ -67,22 +84,6 @@ namespace adEditor
             this.bCancel.Text = "&Annulla";
             this.bCancel.UseVisualStyleBackColor = true;
             this.bCancel.Click += new System.EventHandler(this.bCancel_Click);
-            // 
-            // tbValue
-            // 
-            this.tbValue.Location = new System.Drawing.Point(63, 32);
-            this.tbValue.Name = "tbValue";
-            this.tbValue.Size = new System.Drawing.Size(622, 20);
-            this.tbValue.TabIndex = 0;
-            // 
-            // lValue
-            // 
-            this.lValue.AutoSize = true;
-            this.lValue.Location = new System.Drawing.Point(17, 35);
-            this.lValue.Name = "lValue";
-            this.lValue.Size = new System.Drawing.Size(40, 13);
-            this.lValue.TabIndex = 1;
-            this.lValue.Text = "&Valore:";
             // 
             // StringEditForm
             // 

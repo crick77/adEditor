@@ -89,6 +89,7 @@ namespace adEditor
         private void contextMenuStrip_Opening(object sender, CancelEventArgs e)
         {
             bool editEn = false;
+            bool removeEn = false;
             bool addEn = false;
             bool varEn = false;
             bool eventEn = false;
@@ -99,6 +100,7 @@ namespace adEditor
                 TagElement te = (TagElement)selected.Tag;
 
                 editEn = te.editable;
+                removeEn = te.removable;
                 addEn = te.type == "+D";
                 varEn = te.type == "+V";
                 eventEn = te.type == "+E";
@@ -108,6 +110,7 @@ namespace adEditor
             addToolStripMenuItem.Enabled = addEn;
             varToolStripMenuItem.Enabled = varEn;
             eventsToolStripMenuItem.Enabled = eventEn;
+            removeToolStripMenuItem.Enabled = removeEn;
         }
 
         private void editToolStripMenuItem_Click(object sender, EventArgs e)
@@ -188,15 +191,68 @@ namespace adEditor
                         cf.Dispose();
                         break;
                     }
+                case "VD": // Value-Date
+                    {
+                        DateForm df = new DateForm();
+                        if (te != null)
+                        {
+                            df.Tag = te;
+                        }
+                        df.ShowDialog();
+                        if (df.DialogResult==DialogResult.OK && df.Tag != null)
+                        {
+                            te = (TagElement)df.Tag;
+                            selected.Text = te.name + "= " + te.data;
+                        }
+                        df.Dispose();
+                        break;
+                    }
                 case "OR": // onread
                     {
                         GuardsForm gf = populateGuardsForm();
+                        gf.Text = "onRead event";
                         if (te != null)
                         {
                             gf.Tag = te.data;
                         }
                         gf.ShowDialog();
                         if(gf.DialogResult == DialogResult.OK)
+                        {
+                            te.data = gf.Tag;
+
+                            computerVarRef();
+                        }
+                        gf.Dispose();
+                        break;
+                    }
+                case "OC": // oncopy
+                    {
+                        GuardsForm gf = populateGuardsForm();
+                        gf.Text = "onCopy event";
+                        if (te != null)
+                        {
+                            gf.Tag = te.data;
+                        }
+                        gf.ShowDialog();
+                        if (gf.DialogResult == DialogResult.OK)
+                        {
+                            te.data = gf.Tag;
+
+                            computerVarRef();
+                        }
+                        gf.Dispose();
+                        break;
+                    }
+                case "OS": // onshare
+                    {
+                        GuardsForm gf = populateGuardsForm();
+                        gf.Text = "onShare event";
+                        if (te != null)
+                        {
+                            gf.Tag = te.data;
+                        }
+                        gf.ShowDialog();
+                        if (gf.DialogResult == DialogResult.OK)
                         {
                             te.data = gf.Tag;
 
@@ -253,7 +309,7 @@ namespace adEditor
 
             nf.Dispose();
             TreeNode tn = new TreeNode();
-            TagElement te = new TagElement(type, fName, data, true);
+            TagElement te = new TagElement(type, fName, data, true, true);
             tn.Text = fName + (canShow ? sep+" ": "") + (data!=null ? data : "");
             tn.Tag = te;
             tn.ImageIndex = tn.SelectedImageIndex = iconIndex;
@@ -275,35 +331,37 @@ namespace adEditor
 
         private void onreadToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            GuardsForm gf = populateGuardsForm();
+            foreach (TreeNode n in eventNode.Nodes)
+            {
+                if (n.Text == "onRead")
+                {
+                    treeViewItem.SelectedNode = n;
+                    editToolStripMenuItem_Click(null, null);
+                    return;
+                }
+            }
 
+            GuardsForm gf = populateGuardsForm();
+            gf.Text = "onRead event";
             gf.ShowDialog();
             if(gf.DialogResult == DialogResult.OK && gf.Tag!=null)
             {
                 Guard g = (Guard)gf.Tag;
-                if (treeViewItem.SelectedNode.Nodes.Count==0)
-                {
-                    TreeNode tn = new TreeNode("onRead");
-                    tn.Tag = new TagElement("OR", "onRead", g, true);
-                    treeViewItem.SelectedNode.Nodes.Add(tn);
-                    treeViewItem.SelectedNode.ExpandAll();
+                
+                TreeNode tn = new TreeNode("onRead");
+                tn.Tag = new TagElement("OR", "onRead", g, true, true);
+                treeViewItem.SelectedNode.Nodes.Add(tn);
+                treeViewItem.SelectedNode.ExpandAll();
 
-                    computerVarRef();
-                }
-
+                computerVarRef();               
             }
             gf.Dispose();
-        }
-
-        private void guardsToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-
         }
 
         private void addCounterToolStripMenuItem_Click(object sender, EventArgs e)
         {
             RefData rd = new RefData((decimal)1);
-            TreeNode n = addDataNode(treeViewItem.SelectedNode, "VC", "Counter", 8, true, "=", rd);
+            addDataNode(treeViewItem.SelectedNode, "VC", "Counter", 8, true, "=", rd);
         }
 
         private GuardsForm populateGuardsForm()
@@ -316,7 +374,12 @@ namespace adEditor
                 if (_te.type == "VC")
                 {
                     RefData rd = (RefData)_te.data;
-                    gf.addVar(_te.name, rd.guid, (decimal)rd.data);
+                    gf.addCounterVar(_te.name, rd.guid, (decimal)rd.data);
+                }
+                if(_te.type == "VD")
+                {
+                    RefData rd = (RefData)_te.data;
+                    gf.addExpireVar(_te.name, rd.guid, (DateTime)rd.data);
                 }
             }
 
@@ -340,6 +403,96 @@ namespace adEditor
 
                 rd.refCount = refCount;
                 v.Text = tev.name + "= " + tev.data;
+            }
+        }
+
+        private void addDateToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            RefData rd = new RefData(DateTime.Now);
+            addDataNode(treeViewItem.SelectedNode, "VD", "Date/Time", 8, true, "=", rd);
+        }
+
+        private void onCopyToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            foreach (TreeNode n in eventNode.Nodes)
+            {
+                if (n.Text == "onCopy")
+                {
+                    treeViewItem.SelectedNode = n;
+                    editToolStripMenuItem_Click(null, null);
+                    return;
+                }
+            }
+
+            GuardsForm gf = populateGuardsForm();
+            gf.Text = "onCopy event";
+            gf.ShowDialog();
+            if (gf.DialogResult == DialogResult.OK && gf.Tag != null)
+            {
+                Guard g = (Guard)gf.Tag;
+
+                TreeNode tn = new TreeNode("onCopy");
+                tn.Tag = new TagElement("OC", "onCopy", g, true, true);
+                treeViewItem.SelectedNode.Nodes.Add(tn);
+                treeViewItem.SelectedNode.ExpandAll();
+
+                computerVarRef();
+            }
+            gf.Dispose();
+        }
+
+        private void onShareToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            foreach (TreeNode n in eventNode.Nodes)
+            {
+                if (n.Text == "onShare")
+                {
+                    treeViewItem.SelectedNode = n;
+                    editToolStripMenuItem_Click(null, null);
+                    return;
+                }
+            }
+
+            GuardsForm gf = populateGuardsForm();
+            gf.Text = "onShare event";
+            gf.ShowDialog();
+            if (gf.DialogResult == DialogResult.OK && gf.Tag != null)
+            {
+                Guard g = (Guard)gf.Tag;
+
+                TreeNode tn = new TreeNode("onShare");
+                tn.Tag = new TagElement("OS", "onShare", g, true, true);
+                treeViewItem.SelectedNode.Nodes.Add(tn);
+                treeViewItem.SelectedNode.ExpandAll();
+
+                computerVarRef();
+            }
+            gf.Dispose();
+        }
+
+        private void removeToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            TagElement te = (TagElement)treeViewItem.SelectedNode.Tag;
+            if(!te.removable)
+            {
+                MessageBox.Show("Selectected item cannot be removed.", "Attention");
+                return;
+            }
+
+            if(te.data is RefData)
+            {
+                RefData rd = (RefData)te.data;
+                if(rd.refCount>0)
+                {
+                    MessageBox.Show("Item is referenced "+rd.refCount+" times. Please remove reference and retry.", "Attention");
+                    return;
+                }
+            }
+
+            if (MessageBox.Show("Sure to remove?", "Remove", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+            {
+                treeViewItem.Nodes.Remove(treeViewItem.SelectedNode);
+                computerVarRef();
             }
         }
     }

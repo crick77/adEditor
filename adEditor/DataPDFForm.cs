@@ -8,14 +8,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using Microsoft.Web.WebView2.Core;
+using PdfiumViewer;
 
 namespace adEditor
 {
     public partial class DataPDFForm : Form
     {
         TagElement te;
-        string tfile;
 
         public DataPDFForm()
         {
@@ -32,36 +31,35 @@ namespace adEditor
                 byte[] b = File.ReadAllBytes(ofd.FileName);
                 te.data = b;
                 te.extension = Path.GetExtension(ofd.FileName);
+                showDoc();
             }
         }
 
-        private async void DataPDFForm_Load(object sender, EventArgs e)
-        {
-            await webView2.EnsureCoreWebView2Async();
-            webView2.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
-            await webView2.CoreWebView2.ExecuteScriptAsync("window.addEventListener('contextmenu', window => {window.preventDefault();alert('x');});");
+        private void DataPDFForm_Load(object sender, EventArgs e)
+        {           
             te = (TagElement)this.Tag;
+            showDoc();
+        }        
+
+        private void bZoonIn_Click(object sender, EventArgs e)
+        {
+            pdfRenderer.ZoomIn();            
+        }
+
+        private void bZoomOut_Click(object sender, EventArgs e)
+        {
+            pdfRenderer.ZoomOut();
+        }
+
+        private void showDoc()
+        {
             if (te.data != null)
             {
-                tfile = System.IO.Path.GetTempFileName();
-                File.Move(tfile, Path.ChangeExtension(tfile, te.extension));
-                tfile = Path.ChangeExtension(tfile, te.extension);
-                byte[] b = (byte[])te.data;
-                File.WriteAllBytes(tfile, b);
-                webView2.CoreWebView2.Navigate("file:///" + tfile);
-                //webView2.Enabled = false;
-                webView2.Visible = true;
-            }
-            else
-            {
-                webView2.Visible = false;
-            }
-        }
+                var stream = new MemoryStream((byte[])te.data);
 
-        private async void button1_Click(object sender, EventArgs e)
-        {
-            string ScrollToTopString = @"window.focus(); window.scrollBy(0, 100);";
-            await webView2.CoreWebView2.ExecuteScriptAsync(ScrollToTopString);
+                // Load PDF Document into WinForms Control
+                pdfRenderer.Load(PdfDocument.Load(stream));
+            }
         }
     }
 }   

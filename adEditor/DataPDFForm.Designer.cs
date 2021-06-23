@@ -30,63 +30,79 @@ namespace adEditor
         private void InitializeComponent()
         {
             this.bLoad = new System.Windows.Forms.Button();
-            this.webView2 = new Microsoft.Web.WebView2.WinForms.WebView2();
-            this.button1 = new System.Windows.Forms.Button();
-            ((System.ComponentModel.ISupportInitialize)(this.webView2)).BeginInit();
+            this.bZoonIn = new System.Windows.Forms.Button();
+            this.pdfRenderer = new PdfiumViewer.PdfRenderer();
+            this.bZoomOut = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // bLoad
             // 
-            this.bLoad.Location = new System.Drawing.Point(157, 478);
+            this.bLoad.Location = new System.Drawing.Point(21, 555);
+            this.bLoad.Margin = new System.Windows.Forms.Padding(2);
             this.bLoad.Name = "bLoad";
-            this.bLoad.Size = new System.Drawing.Size(129, 55);
+            this.bLoad.Size = new System.Drawing.Size(64, 29);
             this.bLoad.TabIndex = 1;
             this.bLoad.Text = "&Load file";
             this.bLoad.UseVisualStyleBackColor = true;
             this.bLoad.Click += new System.EventHandler(this.bLoad_Click);
             // 
-            // webView2
+            // bZoonIn
             // 
-            this.webView2.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            this.bZoonIn.Location = new System.Drawing.Point(246, 492);
+            this.bZoonIn.Margin = new System.Windows.Forms.Padding(2);
+            this.bZoonIn.Name = "bZoonIn";
+            this.bZoonIn.Size = new System.Drawing.Size(67, 28);
+            this.bZoonIn.TabIndex = 3;
+            this.bZoonIn.Text = "Zoom +";
+            this.bZoonIn.UseVisualStyleBackColor = true;
+            this.bZoonIn.Click += new System.EventHandler(this.bZoonIn_Click);
+            // 
+            // pdfRenderer
+            // 
+            this.pdfRenderer.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.webView2.CreationProperties = null;
-            this.webView2.DefaultBackgroundColor = System.Drawing.Color.White;
-            this.webView2.Location = new System.Drawing.Point(12, 12);
-            this.webView2.Name = "webView2";
-            this.webView2.Size = new System.Drawing.Size(776, 442);
-            this.webView2.TabIndex = 2;
-            this.webView2.ZoomFactor = 1D;
+            this.pdfRenderer.Location = new System.Drawing.Point(12, 12);
+            this.pdfRenderer.Name = "pdfRenderer";
+            this.pdfRenderer.Page = 0;
+            this.pdfRenderer.Rotation = PdfiumViewer.PdfRotation.Rotate0;
+            this.pdfRenderer.Size = new System.Drawing.Size(732, 451);
+            this.pdfRenderer.TabIndex = 5;
+            this.pdfRenderer.Text = "pdfRenderer";
+            this.pdfRenderer.ZoomMode = PdfiumViewer.PdfViewerZoomMode.FitHeight;
             // 
-            // button1
+            // bZoomOut
             // 
-            this.button1.Location = new System.Drawing.Point(359, 480);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(98, 53);
-            this.button1.TabIndex = 3;
-            this.button1.Text = "button1";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
+            this.bZoomOut.Location = new System.Drawing.Point(406, 492);
+            this.bZoomOut.Margin = new System.Windows.Forms.Padding(2);
+            this.bZoomOut.Name = "bZoomOut";
+            this.bZoomOut.Size = new System.Drawing.Size(67, 28);
+            this.bZoomOut.TabIndex = 6;
+            this.bZoomOut.Text = "Zoom -";
+            this.bZoomOut.UseVisualStyleBackColor = true;
+            this.bZoomOut.Click += new System.EventHandler(this.bZoomOut_Click);
             // 
             // DataPDFForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 564);
-            this.Controls.Add(this.button1);
-            this.Controls.Add(this.webView2);
+            this.ClientSize = new System.Drawing.Size(756, 595);
+            this.Controls.Add(this.bZoomOut);
+            this.Controls.Add(this.pdfRenderer);
+            this.Controls.Add(this.bZoonIn);
             this.Controls.Add(this.bLoad);
+            this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "DataPDFForm";
             this.Text = "DataPDFForm";
             this.Load += new System.EventHandler(this.DataPDFForm_Load);
-            ((System.ComponentModel.ISupportInitialize)(this.webView2)).EndInit();
             this.ResumeLayout(false);
 
         }
 
         #endregion
         private System.Windows.Forms.Button bLoad;
-        private Microsoft.Web.WebView2.WinForms.WebView2 webView2;
-        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button bZoonIn;
+        private PdfiumViewer.PdfRenderer pdfRenderer;
+        private System.Windows.Forms.Button bZoomOut;
     }
 }

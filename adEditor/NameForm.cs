@@ -28,5 +28,13 @@ namespace adEditor
             this.Tag = null;
             Close();
         }
+
+        private void tbName_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                bOk_Click(this, new EventArgs());
+            }
+        }
     }
 }

@@ -12,6 +12,7 @@ namespace adEditor
         public string name;
         public object data;
         public bool editable;
+        public bool removable;
         public string extension;
 
         public TagElement(string type)
@@ -20,6 +21,7 @@ namespace adEditor
             this.name = null;
             this.data = null;
             this.editable = false;
+            this.removable = false;
         }
 
         public TagElement(string type, string name, object data)
@@ -28,6 +30,7 @@ namespace adEditor
             this.name = name;
             this.data = data;
             this.editable = false;
+            this.removable = false;
         }
 
         public TagElement(string type, string name, object data, bool editable)
@@ -36,6 +39,16 @@ namespace adEditor
             this.name = name;
             this.data = data;
             this.editable = editable;
+            this.removable = false;
+        }
+
+        public TagElement(string type, string name, object data, bool editable, bool removable)
+        {
+            this.type = type;
+            this.name = name;
+            this.data = data;
+            this.editable = editable;
+            this.removable = removable;
         }
 
         public TagElement(bool editable)
@@ -43,6 +56,14 @@ namespace adEditor
             this.type = this.name = "*";
             this.data = null;
             this.editable = editable;
+        }
+
+        public TagElement(bool editable, bool removable)
+        {
+            this.type = this.name = "*";
+            this.data = null;
+            this.editable = editable;
+            this.removable = removable;
         }
     }
 }

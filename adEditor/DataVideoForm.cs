@@ -9,36 +9,40 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using LibVLCSharp.Shared;
 
 namespace adEditor
 {
     public partial class DataVideoForm : Form
-    {
-        string tfile;
+    {       
         TagElement te;
+        LibVLC _libVLC;
+        MediaPlayer _mp;
 
         public DataVideoForm()
         {
             InitializeComponent();
+            Core.Initialize();
+            _libVLC = new LibVLC();
+            _mp = new MediaPlayer(_libVLC);
+            videoView1.MediaPlayer = _mp;
         }
 
         private void DataVideoForm_Load(object sender, EventArgs e)
         {
             te = (TagElement)this.Tag;
+            showVideo();
+        }
+
+        private void showVideo()
+        {
             if (te.data != null)
             {
-                tfile = System.IO.Path.GetTempFileName();
-                File.Move(tfile, Path.ChangeExtension(tfile, te.extension));
-                tfile = Path.ChangeExtension(tfile, te.extension);
-                byte[] b = (byte[])te.data;
-                File.WriteAllBytes(tfile, b);
-                axWindowsMediaPlayer.Visible = true;
-                axWindowsMediaPlayer.URL = tfile;
-                axWindowsMediaPlayer.Ctlcontrols.play();
-            }
-            else
-            {
-                axWindowsMediaPlayer.Visible = false;
+                var stream = new MemoryStream((byte[])te.data);
+                MediaInput mi = new StreamMediaInput(stream);
+                Media media = new Media(_libVLC, mi, null);
+                videoView1.MediaPlayer.Play(media);
+                media.Dispose();
             }
         }
 
@@ -64,12 +68,35 @@ namespace adEditor
                 byte[] b = File.ReadAllBytes(ofd.FileName);
                 te.data = b;
                 te.extension = Path.GetExtension(ofd.FileName);
+
+                showVideo();
             }
         }
 
         private void DataVideoForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            if(tfile!=null) File.Delete(tfile);
+            _mp.Stop();
+            _mp.Dispose();
+            _libVLC.Dispose();
+        }
+
+        private void bPlay_Click(object sender, EventArgs e)
+        {
+            if(videoView1.MediaPlayer.IsPlaying)
+            {
+                videoView1.MediaPlayer.Position = 0;
+            }
+            else
+            {
+                videoView1.MediaPlayer.Stop();
+                videoView1.MediaPlayer.Position = 0;                
+                videoView1.MediaPlayer.Play();
+            }
+        }
+
+        private void bClose_Click(object sender, EventArgs e)
+        {
+            Close();
         }
     }
 }

@@ -37,5 +37,13 @@ namespace adEditor
         {
             Close();
         }
+
+        private void tbValue_KeyDown(object sender, KeyEventArgs e)
+        {
+            if(e.KeyCode == Keys.Enter)
+            {
+                bSave_Click(this, new EventArgs());
+            }
+        }
     }
 }

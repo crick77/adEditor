@@ -32,6 +32,12 @@ namespace adEditor
 
         private void bOk_Click(object sender, EventArgs e)
         {
+            if(!cbDecrease.Checked && !cbExpire.Checked)
+            {
+                MessageBox.Show("Must choose at least one of the two guards!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             g = null;
             if (cbDecrease.Checked)
             {
@@ -52,13 +58,13 @@ namespace adEditor
             Close();
         }
 
-        public void addVar(string varName, string varGuid, decimal max)
+        public void addCounterVar(string varName, string varGuid, decimal max)
         {
             ComboBoxVar cbv = new ComboBoxVar(varName, varGuid, max);
             cbVars.Items.Add(cbv);
         }
 
-        public void addExpire(string varName, string varGuid, DateTime date)
+        public void addExpireVar(string varName, string varGuid, DateTime date)
         {
             ComboBoxVar cbv = new ComboBoxVar(varName, varGuid, date);
             cbDates.Items.Add(cbv);
@@ -121,7 +127,7 @@ namespace adEditor
                     cbDates.SelectedIndex = 0;
                     for (int idx = 0; idx < cbDates.Items.Count; idx++)
                     {
-                        ComboBoxVar cbv = (ComboBoxVar)cbVars.Items[idx];
+                        ComboBoxVar cbv = (ComboBoxVar)cbDates.Items[idx];
                         if (cbv.varGuid == g.varDateGuid)
                         {
                             cbDates.SelectedIndex = idx;
