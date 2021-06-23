@@ -90,7 +90,7 @@ namespace adEditor
         {
             bool editEn = false;
             bool removeEn = false;
-            bool addEn = false;
+            bool dataEn = false;
             bool varEn = false;
             bool eventEn = false;
 
@@ -101,16 +101,20 @@ namespace adEditor
 
                 editEn = te.editable;
                 removeEn = te.removable;
-                addEn = te.type == "+D";
+                dataEn = te.type == "+D";
                 varEn = te.type == "+V";
                 eventEn = te.type == "+E";
             }
                         
             editToolStripMenuItem.Enabled = editEn;
-            addToolStripMenuItem.Enabled = addEn;
+
+            dataToolStripMenuItem.Enabled = dataEn;
             varToolStripMenuItem.Enabled = varEn;
             eventsToolStripMenuItem.Enabled = eventEn;
+            addToolStripMenuItem.Enabled = (dataEn || varEn || eventEn);
+
             removeToolStripMenuItem.Enabled = removeEn;
+            renameToolStripMenuItem.Enabled = removeEn;
         }
 
         private void editToolStripMenuItem_Click(object sender, EventArgs e)
@@ -493,6 +497,43 @@ namespace adEditor
             {
                 treeViewItem.Nodes.Remove(treeViewItem.SelectedNode);
                 computerVarRef();
+            }
+        }
+
+        private void renameToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            TagElement te = (TagElement)treeViewItem.SelectedNode.Tag;
+            if(te!=null)
+            {
+                NameForm nf = new NameForm();
+                nf.Tag = te.name;
+                nf.ShowDialog();
+                
+                if(nf.DialogResult == DialogResult.OK && nf.Tag!=null)
+                {
+                    bool done = true;
+                    TreeNode parent = treeViewItem.SelectedNode.Parent;
+                    string fName = (string)nf.Tag;
+                    foreach (TreeNode n in parent.Nodes)
+                    {
+                        if (n != treeViewItem.SelectedNode)
+                        {
+                            TagElement _te = (TagElement)n.Tag;
+                            if (_te.name.ToUpper() == fName.ToUpper())
+                            {
+                                MessageBox.Show("A field with supplied name exists yet.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                done = false;
+                                break;
+                            }
+                        }
+                    }
+
+                    if(done)
+                    {
+                        te.name = fName;
+                        treeViewItem.SelectedNode.Text = fName + (te.data != null ? ": "+te.data : "");
+                    }
+                }
             }
         }
     }

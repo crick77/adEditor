@@ -38,7 +38,7 @@ namespace adEditor
             // tbName
             // 
             this.tbName.Location = new System.Drawing.Point(96, 30);
-            this.tbName.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.tbName.Margin = new System.Windows.Forms.Padding(2);
             this.tbName.Name = "tbName";
             this.tbName.Size = new System.Drawing.Size(425, 20);
             this.tbName.TabIndex = 0;
@@ -46,8 +46,9 @@ namespace adEditor
             // 
             // bOk
             // 
+            this.bOk.DialogResult = System.Windows.Forms.DialogResult.OK;
             this.bOk.Location = new System.Drawing.Point(208, 73);
-            this.bOk.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.bOk.Margin = new System.Windows.Forms.Padding(2);
             this.bOk.Name = "bOk";
             this.bOk.Size = new System.Drawing.Size(74, 32);
             this.bOk.TabIndex = 1;
@@ -57,8 +58,9 @@ namespace adEditor
             // 
             // bCancel
             // 
+            this.bCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.bCancel.Location = new System.Drawing.Point(324, 73);
-            this.bCancel.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.bCancel.Margin = new System.Windows.Forms.Padding(2);
             this.bCancel.Name = "bCancel";
             this.bCancel.Size = new System.Drawing.Size(68, 32);
             this.bCancel.TabIndex = 2;
@@ -84,9 +86,10 @@ namespace adEditor
             this.Controls.Add(this.bCancel);
             this.Controls.Add(this.bOk);
             this.Controls.Add(this.tbName);
-            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "NameForm";
             this.Text = "NameForm";
+            this.Load += new System.EventHandler(this.NameForm_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
 

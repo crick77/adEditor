@@ -36,5 +36,13 @@ namespace adEditor
                 bOk_Click(this, new EventArgs());
             }
         }
+
+        private void NameForm_Load(object sender, EventArgs e)
+        {
+            if(Tag!=null)
+            {
+                tbName.Text = (string)Tag;
+            }
+        }
     }
 }

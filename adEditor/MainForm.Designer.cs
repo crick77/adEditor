@@ -43,12 +43,14 @@ namespace adEditor
             this.treeViewItem = new System.Windows.Forms.TreeView();
             this.contextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.addToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.textToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.imageToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.pDFToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.videoToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.anyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.editToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.removeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.imageListNodes = new System.Windows.Forms.ImageList(this.components);
+            this.dataToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.textToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.PDFToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.imageToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.videoToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.varToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.addCounterToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.addDateToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -56,8 +58,8 @@ namespace adEditor
             this.onreadToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.onCopyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.onShareToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.imageListNodes = new System.Windows.Forms.ImageList(this.components);
-            this.removeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem3 = new System.Windows.Forms.ToolStripSeparator();
+            this.renameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.mainMenu.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
             this.SuspendLayout();
@@ -151,26 +153,62 @@ namespace adEditor
             this.contextMenuStrip.ImageScalingSize = new System.Drawing.Size(32, 32);
             this.contextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.addToolStripMenuItem,
+            this.renameToolStripMenuItem,
             this.editToolStripMenuItem,
-            this.varToolStripMenuItem,
-            this.eventsToolStripMenuItem,
+            this.toolStripMenuItem3,
             this.removeToolStripMenuItem});
             this.contextMenuStrip.Name = "contextMenuStrip";
-            this.contextMenuStrip.Size = new System.Drawing.Size(181, 136);
+            this.contextMenuStrip.Size = new System.Drawing.Size(181, 120);
             this.contextMenuStrip.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStrip_Opening);
             // 
             // addToolStripMenuItem
             // 
             this.addToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.textToolStripMenuItem,
-            this.imageToolStripMenuItem,
-            this.pDFToolStripMenuItem,
-            this.videoToolStripMenuItem,
-            this.anyToolStripMenuItem});
+            this.dataToolStripMenuItem,
+            this.varToolStripMenuItem,
+            this.eventsToolStripMenuItem});
             this.addToolStripMenuItem.Name = "addToolStripMenuItem";
             this.addToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-            this.addToolStripMenuItem.Text = "&Add item";
+            this.addToolStripMenuItem.Text = "&Add";
             this.addToolStripMenuItem.Click += new System.EventHandler(this.addToolStripMenuItem_Click);
+            // 
+            // editToolStripMenuItem
+            // 
+            this.editToolStripMenuItem.Name = "editToolStripMenuItem";
+            this.editToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.editToolStripMenuItem.Text = "&Edit content";
+            this.editToolStripMenuItem.Click += new System.EventHandler(this.editToolStripMenuItem_Click);
+            // 
+            // removeToolStripMenuItem
+            // 
+            this.removeToolStripMenuItem.Name = "removeToolStripMenuItem";
+            this.removeToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.removeToolStripMenuItem.Text = "&Remove";
+            this.removeToolStripMenuItem.Click += new System.EventHandler(this.removeToolStripMenuItem_Click);
+            // 
+            // imageListNodes
+            // 
+            this.imageListNodes.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("imageListNodes.ImageStream")));
+            this.imageListNodes.TransparentColor = System.Drawing.Color.Transparent;
+            this.imageListNodes.Images.SetKeyName(0, "code.png");
+            this.imageListNodes.Images.SetKeyName(1, "personal-information.png");
+            this.imageListNodes.Images.SetKeyName(2, "font.png");
+            this.imageListNodes.Images.SetKeyName(3, "steps.png");
+            this.imageListNodes.Images.SetKeyName(4, "image.png");
+            this.imageListNodes.Images.SetKeyName(5, "video.png");
+            this.imageListNodes.Images.SetKeyName(6, "pdf.png");
+            this.imageListNodes.Images.SetKeyName(7, "policeman.png");
+            // 
+            // dataToolStripMenuItem
+            // 
+            this.dataToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.textToolStripMenuItem,
+            this.PDFToolStripMenuItem,
+            this.imageToolStripMenuItem,
+            this.videoToolStripMenuItem});
+            this.dataToolStripMenuItem.Name = "dataToolStripMenuItem";
+            this.dataToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.dataToolStripMenuItem.Text = "Data";
             // 
             // textToolStripMenuItem
             // 
@@ -179,6 +217,13 @@ namespace adEditor
             this.textToolStripMenuItem.Text = "Text...";
             this.textToolStripMenuItem.Click += new System.EventHandler(this.textToolStripMenuItem_Click);
             // 
+            // PDFToolStripMenuItem
+            // 
+            this.PDFToolStripMenuItem.Name = "PDFToolStripMenuItem";
+            this.PDFToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.PDFToolStripMenuItem.Text = "PDF...";
+            this.PDFToolStripMenuItem.Click += new System.EventHandler(this.pDFToolStripMenuItem_Click);
+            // 
             // imageToolStripMenuItem
             // 
             this.imageToolStripMenuItem.Name = "imageToolStripMenuItem";
@@ -186,32 +231,12 @@ namespace adEditor
             this.imageToolStripMenuItem.Text = "Image...";
             this.imageToolStripMenuItem.Click += new System.EventHandler(this.imageToolStripMenuItem_Click);
             // 
-            // pDFToolStripMenuItem
-            // 
-            this.pDFToolStripMenuItem.Name = "pDFToolStripMenuItem";
-            this.pDFToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-            this.pDFToolStripMenuItem.Text = "PDF...";
-            this.pDFToolStripMenuItem.Click += new System.EventHandler(this.pDFToolStripMenuItem_Click);
-            // 
             // videoToolStripMenuItem
             // 
             this.videoToolStripMenuItem.Name = "videoToolStripMenuItem";
             this.videoToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.videoToolStripMenuItem.Text = "Video...";
             this.videoToolStripMenuItem.Click += new System.EventHandler(this.videoToolStripMenuItem_Click);
-            // 
-            // anyToolStripMenuItem
-            // 
-            this.anyToolStripMenuItem.Name = "anyToolStripMenuItem";
-            this.anyToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-            this.anyToolStripMenuItem.Text = "Any...";
-            // 
-            // editToolStripMenuItem
-            // 
-            this.editToolStripMenuItem.Name = "editToolStripMenuItem";
-            this.editToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-            this.editToolStripMenuItem.Text = "&Edit item";
-            this.editToolStripMenuItem.Click += new System.EventHandler(this.editToolStripMenuItem_Click);
             // 
             // varToolStripMenuItem
             // 
@@ -267,25 +292,17 @@ namespace adEditor
             this.onShareToolStripMenuItem.Text = "on&Share";
             this.onShareToolStripMenuItem.Click += new System.EventHandler(this.onShareToolStripMenuItem_Click);
             // 
-            // imageListNodes
+            // toolStripMenuItem3
             // 
-            this.imageListNodes.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("imageListNodes.ImageStream")));
-            this.imageListNodes.TransparentColor = System.Drawing.Color.Transparent;
-            this.imageListNodes.Images.SetKeyName(0, "code.png");
-            this.imageListNodes.Images.SetKeyName(1, "personal-information.png");
-            this.imageListNodes.Images.SetKeyName(2, "font.png");
-            this.imageListNodes.Images.SetKeyName(3, "steps.png");
-            this.imageListNodes.Images.SetKeyName(4, "image.png");
-            this.imageListNodes.Images.SetKeyName(5, "video.png");
-            this.imageListNodes.Images.SetKeyName(6, "pdf.png");
-            this.imageListNodes.Images.SetKeyName(7, "policeman.png");
+            this.toolStripMenuItem3.Name = "toolStripMenuItem3";
+            this.toolStripMenuItem3.Size = new System.Drawing.Size(177, 6);
             // 
-            // removeToolStripMenuItem
+            // renameToolStripMenuItem
             // 
-            this.removeToolStripMenuItem.Name = "removeToolStripMenuItem";
-            this.removeToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-            this.removeToolStripMenuItem.Text = "&Remove item";
-            this.removeToolStripMenuItem.Click += new System.EventHandler(this.removeToolStripMenuItem_Click);
+            this.renameToolStripMenuItem.Name = "renameToolStripMenuItem";
+            this.renameToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.renameToolStripMenuItem.Text = "Re&name";
+            this.renameToolStripMenuItem.Click += new System.EventHandler(this.renameToolStripMenuItem_Click);
             // 
             // MainForm
             // 
@@ -320,12 +337,13 @@ namespace adEditor
         private System.Windows.Forms.ContextMenuStrip contextMenuStrip;
         private System.Windows.Forms.ToolStripMenuItem editToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem addToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem textToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem imageToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem pDFToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem videoToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem anyToolStripMenuItem;
         private System.Windows.Forms.ImageList imageListNodes;
+        private System.Windows.Forms.ToolStripMenuItem removeToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem dataToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem textToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem PDFToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem imageToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem videoToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem varToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem addCounterToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem addDateToolStripMenuItem;
@@ -333,7 +351,8 @@ namespace adEditor
         private System.Windows.Forms.ToolStripMenuItem onreadToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem onCopyToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem onShareToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem removeToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem renameToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem3;
     }
 }
 
