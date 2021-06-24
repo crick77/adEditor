@@ -10,6 +10,7 @@ namespace adEditor
     {
         public string type;
         public string name;
+        public int maxLen;
         public object data;
         public bool editable;
         public bool removable;
@@ -22,30 +23,34 @@ namespace adEditor
             this.data = null;
             this.editable = false;
             this.removable = false;
+            this.maxLen = 0;
         }
 
-        public TagElement(string type, string name, object data)
+        public TagElement(string type, string name, int maxLen, object data)
         {
             this.type = type;
             this.name = name;
             this.data = data;
+            this.maxLen = maxLen;
             this.editable = false;
             this.removable = false;
         }
 
-        public TagElement(string type, string name, object data, bool editable)
+        public TagElement(string type, string name, int maxLen, object data, bool editable)
         {
             this.type = type;
             this.name = name;
             this.data = data;
+            this.maxLen = maxLen;
             this.editable = editable;
             this.removable = false;
         }
 
-        public TagElement(string type, string name, object data, bool editable, bool removable)
+        public TagElement(string type, string name, int maxLen, object data, bool editable, bool removable)
         {
             this.type = type;
             this.name = name;
+            this.maxLen = maxLen;
             this.data = data;
             this.editable = editable;
             this.removable = removable;

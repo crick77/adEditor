@@ -12,9 +12,13 @@ namespace adEditor
 {
     public partial class NameForm : Form
     {
-        public NameForm()
+        private int maxLen;
+
+        public NameForm(int maxLen)
         {
             InitializeComponent();
+
+            this.maxLen = maxLen;
         }
 
         private void bOk_Click(object sender, EventArgs e)
@@ -39,6 +43,7 @@ namespace adEditor
 
         private void NameForm_Load(object sender, EventArgs e)
         {
+            tbName.MaxLength = maxLen;
             if(Tag!=null)
             {
                 tbName.Text = (string)Tag;

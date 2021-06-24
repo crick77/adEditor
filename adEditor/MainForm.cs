@@ -7,13 +7,238 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.IO;
+using System.Runtime.InteropServices;
 
 namespace adEditor
 {
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct CounterVar
+    {
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 22)]
+        public string varName;
+
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 36)]
+        public string varGuid;
+
+        [MarshalAs(UnmanagedType.U1)]
+        public byte refCount;
+
+        [MarshalAs(UnmanagedType.U2)]
+        public short value;
+
+        /*public string varName
+        {
+            get { return new string(_varName); }
+            set
+            {
+                if (value.Length == 22)
+                {
+                    _varName = value.ToArray();
+                }
+                else
+                {
+                    throw new InvalidOperationException("Wrong string length.");
+                }
+            }
+        }
+
+        public string varGuid
+        {
+            get { return new string(_varGuid); }
+            set
+            {
+                if (value.Length == 36)
+                {
+                    _varGuid = value.ToArray();
+                }
+                else
+                {
+                    throw new InvalidOperationException("Wrong string length.");
+                }
+            }
+        }*/
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct DateVar
+    {
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 22)]
+        public string varName;
+
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 36)]
+        public string varGuid;
+
+        [MarshalAs(UnmanagedType.U1)]
+        public byte refCount;
+
+        [MarshalAs(UnmanagedType.U8)]
+        public long value;
+
+        /*public string varName
+        {
+            get { return new string(_varName); }
+            set
+            {
+                if (value.Length == 22)
+                {
+                    _varName = value.ToArray();
+                }
+                else
+                {
+                    throw new InvalidOperationException("Wrong string length.");
+                }
+            }
+        }
+
+        public string varGuid
+        {
+            get { return new string(_varGuid); }
+            set
+            {
+                if (value.Length == 36)
+                {
+                    _varGuid = value.ToArray();
+                }
+                else
+                {
+                    throw new InvalidOperationException("Wrong string length.");
+                }
+            }
+        }*/
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct Event
+    {
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
+        public char[] eventName;
+
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 36)]
+        public string varGuid;
+
+        [MarshalAs(UnmanagedType.U2)]
+        public short decreaseQty;
+
+        /*public string eventName
+        {
+            get { return new string(_eventName); }
+            set
+            {
+                if (value.Length == 2)
+                {
+                    _eventName = value.ToArray();
+                }
+                else
+                {
+                    throw new InvalidOperationException("Wrong string length.");
+                }
+            }
+        }
+
+        public string varGuid
+        {
+            get { return new string(_varGuid); }
+            set
+            {
+                if (value.Length == 36)
+                {
+                    _varGuid = value.ToArray();
+                }
+                else
+                {
+                    throw new InvalidOperationException("Wrong string length.");
+                }
+            }
+        }*/
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct ActiveDataFile
+    {
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+        public byte[] magic;
+
+        [MarshalAs(UnmanagedType.U1)]
+        public byte version;
+
+        [MarshalAs(UnmanagedType.U8)]
+        public long createTime;
+
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 64)]
+        public string owner;
+
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 20)]
+        public string metaDataHash;
+
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 20)]
+        public string dataHash;
+
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 6)]
+        public CounterVar[] counter;
+
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 6)]
+        public DateVar[] datetime;
+
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
+        public Event[] events;
+
+        /*public string owner
+        {
+            get { return new string(_owner); }
+            set
+            {
+                if (value.Length == 64)
+                {
+                    _owner = value.ToArray();
+                }
+                else
+                {
+                    throw new InvalidOperationException("Wrong string length.");
+                }
+            }
+        }
+
+        public string metaDataHash
+        {
+            get { return new string(_metaDataHash); }
+            set
+            {
+                if (value.Length == 20)
+                {
+                    _metaDataHash = value.ToArray();
+                }
+                else
+                {
+                    throw new InvalidOperationException("Wrong string length.");
+                }
+            }
+        }
+
+        public string dataHash
+        {
+            get { return new string(_dataHash); }
+            set
+            {
+                if (value.Length == 20)
+                {
+                    _dataHash = value.ToArray();
+                }
+                else
+                {
+                    throw new InvalidOperationException("Wrong string length.");
+                }
+            }
+        }*/
+    }
+
     public partial class MainForm : Form
     {
         private TreeNode varNode = null;
         private TreeNode eventNode = null;
+        private TreeNode metadataNode = null;
+        private TreeNode dataNode = null;
+        
         public MainForm()
         {
             InitializeComponent();
@@ -33,19 +258,21 @@ namespace adEditor
             TreeNode metaData = new TreeNode("Meta-Data");
             metaData.ImageIndex = 0;
             metaData.Tag = new TagElement("-");
+            metadataNode = metaData;
 
             TreeNode n = new TreeNode("Version: 1.0");
             n.ImageIndex = n.SelectedImageIndex = 3;
-            n.Tag = new TagElement("S", "Version", "1.0");
+            n.Tag = new TagElement("S", "Version", 0, "1.0");
             metaData.Nodes.Add(n);
-            string c = DateTime.Now.ToString("dd-MM-yyyy HH:mm:ss");
+            DateTime now = DateTime.Now;
+            string c = now.ToString("dd-MM-yyyy HH:mm:ss");
             n = new TreeNode("Created: "+c);
-            n.Tag = new TagElement("D", "Created", c);
+            n.Tag = new TagElement("D", "Created", 0, now);
             metaData.Nodes.Add(n);
 
             c = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
             n = new TreeNode("Owner: " + c);
-            n.Tag = new TagElement("S", "Owner", c, true);
+            n.Tag = new TagElement("S", "Owner", 64, c, true);
             metaData.Nodes.Add(n);
 
             n = new TreeNode("Guards");
@@ -71,6 +298,7 @@ namespace adEditor
             data.ImageIndex = data.SelectedImageIndex = 1;
             root.Nodes.Add(metaData);
             root.Nodes.Add(data);
+            dataNode = data;
 
             treeViewItem.Nodes.Add(root);
             treeViewItem.ExpandAll();
@@ -275,17 +503,17 @@ namespace adEditor
 
         private void textToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            addDataNode(treeViewItem.SelectedNode, "S", "text", 2, true);
+            addDataNode(treeViewItem.SelectedNode, "S", 32, "text", 2, true);
         }
 
         private void imageToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            addDataNode(treeViewItem.SelectedNode, "I", "image", 4);
+            addDataNode(treeViewItem.SelectedNode, "I", 32, "image", 4);
         }
 
-        private TreeNode addDataNode(TreeNode selected, string type, string descr, int iconIndex, bool canShow = false, string sep = ":", object data = null)
+        private TreeNode addDataNode(TreeNode selected, string type, int maxlen, string descr, int iconIndex, bool canShow = false, string sep = ":", object data = null)
         {
-            NameForm nf = new NameForm();
+            NameForm nf = new NameForm(maxlen);
             nf.Text = "Add "+descr+" field";
             bool done = false;
             string fName = null;
@@ -313,7 +541,7 @@ namespace adEditor
 
             nf.Dispose();
             TreeNode tn = new TreeNode();
-            TagElement te = new TagElement(type, fName, data, true, true);
+            TagElement te = new TagElement(type, fName, maxlen, data, true, true);
             tn.Text = fName + (canShow ? sep+" ": "") + (data!=null ? data : "");
             tn.Tag = te;
             tn.ImageIndex = tn.SelectedImageIndex = iconIndex;
@@ -325,12 +553,12 @@ namespace adEditor
 
         private void videoToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            addDataNode(treeViewItem.SelectedNode, "V", "video", 5);
+            addDataNode(treeViewItem.SelectedNode, "V", 32, "video", 5);
         }
 
         private void pDFToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            addDataNode(treeViewItem.SelectedNode, "P", "PDF", 6);
+            addDataNode(treeViewItem.SelectedNode, "P", 32, "PDF", 6);
         }
 
         private void onreadToolStripMenuItem_Click(object sender, EventArgs e)
@@ -353,7 +581,7 @@ namespace adEditor
                 Guard g = (Guard)gf.Tag;
                 
                 TreeNode tn = new TreeNode("onRead");
-                tn.Tag = new TagElement("OR", "onRead", g, true, true);
+                tn.Tag = new TagElement("OR", "onRead", 0, g, true, true);
                 treeViewItem.SelectedNode.Nodes.Add(tn);
                 treeViewItem.SelectedNode.ExpandAll();
 
@@ -365,7 +593,7 @@ namespace adEditor
         private void addCounterToolStripMenuItem_Click(object sender, EventArgs e)
         {
             RefData rd = new RefData((decimal)1);
-            addDataNode(treeViewItem.SelectedNode, "VC", "Counter", 8, true, "=", rd);
+            addDataNode(treeViewItem.SelectedNode, "VC", 22, "Counter", 8, true, "=", rd);
         }
 
         private GuardsForm populateGuardsForm()
@@ -413,7 +641,7 @@ namespace adEditor
         private void addDateToolStripMenuItem_Click(object sender, EventArgs e)
         {
             RefData rd = new RefData(DateTime.Now);
-            addDataNode(treeViewItem.SelectedNode, "VD", "Date/Time", 8, true, "=", rd);
+            addDataNode(treeViewItem.SelectedNode, "VD", 22, "Date/Time", 8, true, "=", rd);
         }
 
         private void onCopyToolStripMenuItem_Click(object sender, EventArgs e)
@@ -436,7 +664,7 @@ namespace adEditor
                 Guard g = (Guard)gf.Tag;
 
                 TreeNode tn = new TreeNode("onCopy");
-                tn.Tag = new TagElement("OC", "onCopy", g, true, true);
+                tn.Tag = new TagElement("OC", "onCopy", 0, g, true, true);
                 treeViewItem.SelectedNode.Nodes.Add(tn);
                 treeViewItem.SelectedNode.ExpandAll();
 
@@ -465,7 +693,7 @@ namespace adEditor
                 Guard g = (Guard)gf.Tag;
 
                 TreeNode tn = new TreeNode("onShare");
-                tn.Tag = new TagElement("OS", "onShare", g, true, true);
+                tn.Tag = new TagElement("OS", "onShare", 0, g, true, true);
                 treeViewItem.SelectedNode.Nodes.Add(tn);
                 treeViewItem.SelectedNode.ExpandAll();
 
@@ -505,7 +733,7 @@ namespace adEditor
             TagElement te = (TagElement)treeViewItem.SelectedNode.Tag;
             if(te!=null)
             {
-                NameForm nf = new NameForm();
+                NameForm nf = new NameForm(te.maxLen);
                 nf.Tag = te.name;
                 nf.ShowDialog();
                 
@@ -535,6 +763,151 @@ namespace adEditor
                     }
                 }
             }
+        }
+
+        private void treeViewItem_DoubleClick(object sender, EventArgs e)
+        {
+            TagElement te = (TagElement)treeViewItem.SelectedNode.Tag;
+            if(te.editable)
+            {
+                editToolStripMenuItem_Click(sender, e);
+            }
+        }
+
+        private void saveToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if(dataNode.Nodes.Count<1)
+            {
+                if (MessageBox.Show("You're going to save an empty ActiveData file. Is that you want?", "Are you sure?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Exclamation) != DialogResult.Yes) return;
+            }
+
+            if(saveFileDialog.ShowDialog()==DialogResult.OK)
+            {
+                Stream s = new FileStream(saveFileDialog.FileName, FileMode.Create);
+
+                ActiveDataFile adf = new ActiveDataFile();
+                adf.magic = Encoding.UTF8.GetBytes("*AD*");
+                adf.version = ((1 << 4) + (0 & 0x0F));
+                TagElement te = (TagElement)metadataNode.Nodes[1].Tag;
+                adf.createTime = ((DateTime)te.data).Ticks;
+                te = (TagElement)metadataNode.Nodes[2].Tag;
+                adf.owner = padString((string)te.data, 64);
+
+                adf.metaDataHash = "12345678901234567890";
+                adf.dataHash = "12345678901234567890";
+
+                adf.counter = new CounterVar[6];
+                adf.datetime = new DateVar[6];
+                int idxC = 0, idxD = 0;
+                foreach(TreeNode n in varNode.Nodes)
+                {
+                    te = (TagElement)n.Tag;
+                    RefData rd = (RefData)te.data;
+                    if (te.type == "VC")
+                    {
+                        adf.counter[idxC] = new CounterVar();
+                        adf.counter[idxC].varName = padString(te.name, 22);
+                        adf.counter[idxC].varGuid = rd.guid;
+                        adf.counter[idxC].refCount = Convert.ToByte(rd.refCount);
+                        adf.counter[idxC].value = Convert.ToInt16((decimal)rd.data);
+                        idxC++;
+                    }
+
+                    if (te.type == "VD")
+                    {
+                        adf.datetime[idxD] = new DateVar();
+                        adf.datetime[idxD].varName = padString(te.name, 22);
+                        adf.datetime[idxD].varGuid = rd.guid;
+                        adf.datetime[idxD].refCount = Convert.ToByte(rd.refCount);
+                        adf.datetime[idxD].value = ((DateTime)rd.data).Ticks;
+                        idxD++;
+                    }
+                }
+
+                adf.events = new Event[3];
+                int idx = 0;
+                foreach (TreeNode n in eventNode.Nodes)
+                {
+                    te = (TagElement)n.Tag;
+                    Guard g = (Guard)te.data;
+
+                    adf.events[idx] = new Event();
+                    adf.events[idx].eventName = te.type.ToCharArray();
+                    if(g.decreaseQty==0) // dateguard
+                    {
+                        adf.events[idx].decreaseQty = 0;
+                        adf.events[idx].varGuid = g.varDateGuid;
+                    }
+                    else
+                    {
+                        adf.events[idx].decreaseQty = Convert.ToInt16(g.decreaseQty);
+                        adf.events[idx].varGuid = g.varCounterGuid;
+                    }
+                    
+                    idx++;
+                }
+
+                byte[] newBuffer = ActiveDataFileToBytes(adf);
+                s.Write(newBuffer, 0, newBuffer.Length);                               
+                                
+                // pad fill                
+                s.Close();
+
+                MessageBox.Show("File saved! "+ newBuffer.Length + " bytes written.");
+            }
+        }
+
+        private int writeInt(Stream s, int value)
+        {
+            byte[] b = BitConverter.GetBytes(value);
+            s.Write(b, 0, b.Length);
+            return b.Length;
+        }
+
+        private int writeLong(Stream s, long value)
+        {
+            byte[] b = BitConverter.GetBytes(value);
+            s.Write(b, 0, b.Length);
+            return b.Length;
+        }
+
+        private int writeByte(Stream s, byte b)
+        {
+            s.WriteByte(b);
+            return sizeof(byte);
+        }
+
+        private int writeString(Stream s, string t)
+        {
+            byte[] b = Encoding.UTF8.GetBytes(t);
+            s.Write(b, 0, b.Length);
+            return b.Length;
+        }
+
+        private int writePad(Stream s, byte b, int len)
+        {
+            byte[] bb = new byte[len];
+            for (int i = 0; i < len; i++) bb[i] = b;
+            s.Write(bb, 0, len);
+            return len;
+        }
+
+        private byte[] ActiveDataFileToBytes(ActiveDataFile adf)
+        {
+            int length = Marshal.SizeOf(adf);
+            IntPtr ptr = Marshal.AllocHGlobal(length);
+            byte[] myBuffer = new byte[length];
+
+            Marshal.StructureToPtr(adf, ptr, true);
+            Marshal.Copy(ptr, myBuffer, 0, length);
+            Marshal.FreeHGlobal(ptr);
+
+            return myBuffer;
+        }
+
+        private string padString(string s, int pad)
+        {
+            return s.PadRight(pad, (char)0).Substring(0, pad);            
         }
     }
 }

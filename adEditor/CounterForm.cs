@@ -24,6 +24,7 @@ namespace adEditor
             te = (TagElement)this.Tag;
             RefData rd = (RefData)te.data;
             nudValue.Value = (decimal)rd.data;
+            nudValue.Select();
         }
 
         private void bOk_Click(object sender, EventArgs e)
@@ -37,6 +38,14 @@ namespace adEditor
         {
             te = null;
             Close();
+        }
+
+        private void nudValue_KeyDown(object sender, KeyEventArgs e)
+        {
+            if(e.KeyCode == Keys.Enter)
+            {
+                bOk_Click(sender, new EventArgs());
+            }
         }
     }
 }
