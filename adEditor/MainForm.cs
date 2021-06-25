@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 
 namespace adEditor
 {    
@@ -114,7 +115,8 @@ namespace adEditor
         private TreeNode metadataNode = null;
         private TreeNode dataNode = null;
         private bool dirty;
-        
+        private SHA1Managed sha1 = new SHA1Managed();
+
         public MainForm()
         {
             InitializeComponent();
@@ -749,19 +751,19 @@ namespace adEditor
                 }
 
                 adf.magic2 = Encoding.UTF8.GetBytes("DF");
-                adf.dataCount = Convert.ToInt16(dataNode.Nodes.Count);
-
-                byte[] newBuffer = ActiveDataFileToBytes(adf);
-                s.Write(newBuffer, 0, newBuffer.Length);
-                writtenSize += newBuffer.Length;
+                adf.dataCount = Convert.ToInt16(dataNode.Nodes.Count); 
+                // compute hash of metadata and reinsert it
+                adf.metaDataHash = sha1.ComputeHash(ActiveDataFileToBytes(adf));
+                // compute for length
+                byte[] headerBuff = ActiveDataFileToBytes(adf);
 
                 // pad fill                
-                int headerSizePad = 2048 - newBuffer.Length;
-                byte[] pad = new byte[headerSizePad].Initialize(0);
-                s.Write(pad, 0, pad.Length);
-                writtenSize += pad.Length;
+                int headerSizePad = 2048 - headerBuff.Length;
+                byte[] padBuffer = new byte[headerSizePad].Initialize(0);
 
-                // write data fields
+                // compute data fields size
+                byte[][] dataBuffer = new byte[dataNode.Nodes.Count*2][];
+                int i = 0;
                 foreach(TreeNode n in dataNode.Nodes)
                 {
                     te = (TagElement)n.Tag;
@@ -772,15 +774,33 @@ namespace adEditor
                     adfld.extension = padStringToByteArray(te.extension, 32);
                     adfld.fieldSize = (uint)data.Length;
 
-                    // write field header to file
-                    newBuffer = ActiveDataFieldToBytes(adfld);
-                    s.Write(newBuffer, 0, newBuffer.Length);
-                    writtenSize += newBuffer.Length;
-
-                    // write field data to file
-                    s.Write(data, 0, data.Length);
-                    writtenSize += data.Length;
+                    // compute size of buffer
+                    dataBuffer[i] = ActiveDataFieldToBytes(adfld);
+                    dataBuffer[i + 1] = data;
+                    i+=2;
                 }
+
+                // combine array
+                byte[] dataCombined = new byte[dataBuffer.Sum(a => a.Length)];
+                int offset = 0;
+                foreach (byte[] array in dataBuffer)
+                {
+                    System.Buffer.BlockCopy(array, 0, dataCombined, offset, array.Length);
+                    offset += array.Length;
+                }
+
+                // update header data hash
+                adf.dataHash = sha1.ComputeHash(dataCombined);
+                // regenerate new buffer
+                headerBuff = ActiveDataFileToBytes(adf);
+
+                // Write down the sequence of buffers to file
+                s.Write(headerBuff, 0, headerBuff.Length);
+                writtenSize += headerBuff.Length;
+                s.Write(padBuffer, 0, padBuffer.Length);
+                writtenSize += padBuffer.Length;
+                s.Write(dataCombined, 0, dataCombined.Length);
+                writtenSize += dataCombined.Length;
 
                 s.Close();
                 dirty = false;
