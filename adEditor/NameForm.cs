@@ -23,7 +23,14 @@ namespace adEditor
 
         private void bOk_Click(object sender, EventArgs e)
         {
+            if(tbName.Text.Length<1)
+            {
+                MessageBox.Show("Empty name is not allowed!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             this.Tag = tbName.Text;
+            bOk.DialogResult = DialogResult.OK;
             Close();
         }
 

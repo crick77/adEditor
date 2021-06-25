@@ -37,16 +37,15 @@ namespace adEditor
             // 
             // tbName
             // 
-            this.tbName.Location = new System.Drawing.Point(96, 30);
+            this.tbName.Location = new System.Drawing.Point(118, 30);
             this.tbName.Margin = new System.Windows.Forms.Padding(2);
             this.tbName.Name = "tbName";
-            this.tbName.Size = new System.Drawing.Size(425, 20);
+            this.tbName.Size = new System.Drawing.Size(403, 20);
             this.tbName.TabIndex = 0;
             this.tbName.KeyDown += new System.Windows.Forms.KeyEventHandler(this.tbName_KeyDown);
             // 
             // bOk
             // 
-            this.bOk.DialogResult = System.Windows.Forms.DialogResult.OK;
             this.bOk.Location = new System.Drawing.Point(208, 73);
             this.bOk.Margin = new System.Windows.Forms.Padding(2);
             this.bOk.Name = "bOk";
@@ -73,22 +72,24 @@ namespace adEditor
             this.label1.AutoSize = true;
             this.label1.Location = new System.Drawing.Point(36, 33);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(55, 13);
+            this.label1.Size = new System.Drawing.Size(77, 13);
             this.label1.TabIndex = 3;
-            this.label1.Text = "Var name:";
+            this.label1.Text = "Variable name:";
             // 
             // NameForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(577, 122);
+            this.ControlBox = false;
             this.Controls.Add(this.label1);
             this.Controls.Add(this.bCancel);
             this.Controls.Add(this.bOk);
             this.Controls.Add(this.tbName);
             this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "NameForm";
-            this.Text = "NameForm";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.Text = "Add/rename variable";
             this.Load += new System.EventHandler(this.NameForm_Load);
             this.ResumeLayout(false);
             this.PerformLayout();

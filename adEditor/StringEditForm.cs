@@ -13,10 +13,13 @@ namespace adEditor
     public partial class StringEditForm : Form
     {
         private TagElement te;
+        private int maxLen;
 
-        public StringEditForm()
+        public StringEditForm(int maxLen)
         {
             InitializeComponent();
+
+            this.maxLen = maxLen;
         }
 
         private void StringEditForm_Shown(object sender, EventArgs e)
@@ -24,6 +27,7 @@ namespace adEditor
             te = (TagElement)this.Tag;
             gbEdit.Text = te.name;
             tbValue.Text = (string)te.data;
+            tbValue.MaxLength = maxLen;
         }
 
         private void bSave_Click(object sender, EventArgs e)

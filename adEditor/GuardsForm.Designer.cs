@@ -53,9 +53,9 @@ namespace adEditor
             this.groupBox1.Controls.Add(this.label1);
             this.groupBox1.Controls.Add(this.nudCounter);
             this.groupBox1.Location = new System.Drawing.Point(6, 11);
-            this.groupBox1.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.groupBox1.Margin = new System.Windows.Forms.Padding(2);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Padding = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.groupBox1.Padding = new System.Windows.Forms.Padding(2);
             this.groupBox1.Size = new System.Drawing.Size(488, 64);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
@@ -76,7 +76,7 @@ namespace adEditor
             this.cbVars.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cbVars.FormattingEnabled = true;
             this.cbVars.Location = new System.Drawing.Point(106, 26);
-            this.cbVars.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.cbVars.Margin = new System.Windows.Forms.Padding(2);
             this.cbVars.Name = "cbVars";
             this.cbVars.Size = new System.Drawing.Size(209, 21);
             this.cbVars.TabIndex = 5;
@@ -86,7 +86,7 @@ namespace adEditor
             // 
             this.cbDecrease.AutoSize = true;
             this.cbDecrease.Location = new System.Drawing.Point(30, 28);
-            this.cbDecrease.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.cbDecrease.Margin = new System.Windows.Forms.Padding(2);
             this.cbDecrease.Name = "cbDecrease";
             this.cbDecrease.Size = new System.Drawing.Size(72, 17);
             this.cbDecrease.TabIndex = 3;
@@ -108,7 +108,7 @@ namespace adEditor
             // 
             this.nudCounter.Enabled = false;
             this.nudCounter.Location = new System.Drawing.Point(346, 27);
-            this.nudCounter.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.nudCounter.Margin = new System.Windows.Forms.Padding(2);
             this.nudCounter.Minimum = new decimal(new int[] {
             1,
             0,
@@ -128,9 +128,9 @@ namespace adEditor
             this.groupBox2.Controls.Add(this.cbDates);
             this.groupBox2.Controls.Add(this.cbExpire);
             this.groupBox2.Location = new System.Drawing.Point(6, 84);
-            this.groupBox2.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.groupBox2.Margin = new System.Windows.Forms.Padding(2);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Padding = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.groupBox2.Padding = new System.Windows.Forms.Padding(2);
             this.groupBox2.Size = new System.Drawing.Size(488, 79);
             this.groupBox2.TabIndex = 1;
             this.groupBox2.TabStop = false;
@@ -141,7 +141,7 @@ namespace adEditor
             this.cbDates.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cbDates.FormattingEnabled = true;
             this.cbDates.Location = new System.Drawing.Point(106, 37);
-            this.cbDates.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.cbDates.Margin = new System.Windows.Forms.Padding(2);
             this.cbDates.Name = "cbDates";
             this.cbDates.Size = new System.Drawing.Size(209, 21);
             this.cbDates.TabIndex = 1;
@@ -150,7 +150,7 @@ namespace adEditor
             // 
             this.cbExpire.AutoSize = true;
             this.cbExpire.Location = new System.Drawing.Point(30, 38);
-            this.cbExpire.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.cbExpire.Margin = new System.Windows.Forms.Padding(2);
             this.cbExpire.Name = "cbExpire";
             this.cbExpire.Size = new System.Drawing.Size(75, 17);
             this.cbExpire.TabIndex = 0;
@@ -161,7 +161,7 @@ namespace adEditor
             // bOk
             // 
             this.bOk.Location = new System.Drawing.Point(92, 184);
-            this.bOk.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.bOk.Margin = new System.Windows.Forms.Padding(2);
             this.bOk.Name = "bOk";
             this.bOk.Size = new System.Drawing.Size(66, 29);
             this.bOk.TabIndex = 3;
@@ -184,13 +184,15 @@ namespace adEditor
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(505, 232);
+            this.ControlBox = false;
             this.Controls.Add(this.bCancel);
             this.Controls.Add(this.bOk);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
-            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "GuardsForm";
-            this.Text = "GuardsForm";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.Text = "xxx event";
             this.Load += new System.EventHandler(this.GuardsForm_Load);
             this.Shown += new System.EventHandler(this.GuardsForm_Shown);
             this.groupBox1.ResumeLayout(false);

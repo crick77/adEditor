@@ -39,7 +39,7 @@ namespace adEditor
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(93, 19);
+            this.label2.Location = new System.Drawing.Point(90, 21);
             this.label2.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(37, 13);
@@ -49,7 +49,7 @@ namespace adEditor
             // nudValue
             // 
             this.nudValue.Location = new System.Drawing.Point(140, 19);
-            this.nudValue.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.nudValue.Margin = new System.Windows.Forms.Padding(2);
             this.nudValue.Maximum = new decimal(new int[] {
             -1981284353,
             -1966660860,
@@ -72,23 +72,25 @@ namespace adEditor
             // 
             // bOk
             // 
+            this.bOk.DialogResult = System.Windows.Forms.DialogResult.OK;
             this.bOk.Location = new System.Drawing.Point(110, 58);
-            this.bOk.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.bOk.Margin = new System.Windows.Forms.Padding(2);
             this.bOk.Name = "bOk";
             this.bOk.Size = new System.Drawing.Size(81, 32);
             this.bOk.TabIndex = 4;
-            this.bOk.Text = "Ok";
+            this.bOk.Text = "&Ok";
             this.bOk.UseVisualStyleBackColor = true;
             this.bOk.Click += new System.EventHandler(this.bOk_Click);
             // 
             // bCancel
             // 
+            this.bCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.bCancel.Location = new System.Drawing.Point(284, 58);
-            this.bCancel.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.bCancel.Margin = new System.Windows.Forms.Padding(2);
             this.bCancel.Name = "bCancel";
             this.bCancel.Size = new System.Drawing.Size(81, 32);
             this.bCancel.TabIndex = 5;
-            this.bCancel.Text = "Cancel";
+            this.bCancel.Text = "&Cancel";
             this.bCancel.UseVisualStyleBackColor = true;
             this.bCancel.Click += new System.EventHandler(this.bCancel_Click);
             // 
@@ -97,13 +99,15 @@ namespace adEditor
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(462, 113);
+            this.ControlBox = false;
             this.Controls.Add(this.bCancel);
             this.Controls.Add(this.bOk);
             this.Controls.Add(this.nudValue);
             this.Controls.Add(this.label2);
-            this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
+            this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "CounterForm";
-            this.Text = "Add/edit counter";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.Text = "Edit counter";
             this.Load += new System.EventHandler(this.CounterForm_Load);
             ((System.ComponentModel.ISupportInitialize)(this.nudValue)).EndInit();
             this.ResumeLayout(false);

@@ -15,22 +15,26 @@ namespace adEditor
     public partial class DataPDFForm : Form
     {
         TagElement te;
+        byte[] data;
+        string extension;
 
         public DataPDFForm()
         {
             InitializeComponent();
+
+            data = null;
+            extension = null;
         }
 
         private void bLoad_Click(object sender, EventArgs e)
-        {
-            OpenFileDialog ofd = new OpenFileDialog();
-            ofd.Filter = "PDF files (*.pdf)|*.pdf";
-            ofd.RestoreDirectory = true;
-            if (ofd.ShowDialog() == DialogResult.OK)
+        {            
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
-                byte[] b = File.ReadAllBytes(ofd.FileName);
-                te.data = b;
-                te.extension = Path.GetExtension(ofd.FileName);
+                data = File.ReadAllBytes(openFileDialog.FileName);                
+                extension = Path.GetExtension(openFileDialog.FileName).Substring(1).ToUpper();
+
+                bZoonIn.Enabled = bZoomOut.Enabled = (data != null);
+
                 showDoc();
             }
         }
@@ -38,6 +42,11 @@ namespace adEditor
         private void DataPDFForm_Load(object sender, EventArgs e)
         {           
             te = (TagElement)this.Tag;
+            data = (byte[])te.data;
+            extension = te.extension;
+
+            bZoonIn.Enabled = bZoomOut.Enabled = (data != null);
+
             showDoc();
         }        
 
@@ -53,13 +62,23 @@ namespace adEditor
 
         private void showDoc()
         {
-            if (te.data != null)
+            if (data != null)
             {
-                var stream = new MemoryStream((byte[])te.data);
-
-                // Load PDF Document into WinForms Control
+                var stream = new MemoryStream(data);
                 pdfRenderer.Load(PdfDocument.Load(stream));
             }
+        }
+
+        private void bOk_Click(object sender, EventArgs e)
+        {
+            te.data = data;
+            te.extension = extension;
+            Close();
+        }
+
+        private void bCancel_Click(object sender, EventArgs e)
+        {
+            Close();
         }
     }
 }   

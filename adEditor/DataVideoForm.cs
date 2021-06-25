@@ -14,34 +14,42 @@ using LibVLCSharp.Shared;
 namespace adEditor
 {
     public partial class DataVideoForm : Form
-    {       
+    {
         TagElement te;
         LibVLC _libVLC;
         MediaPlayer _mp;
+        byte[] data;
+        string extension;
 
         public DataVideoForm()
         {
             InitializeComponent();
+
             Core.Initialize();
             _libVLC = new LibVLC();
             _mp = new MediaPlayer(_libVLC);
-            videoView1.MediaPlayer = _mp;
+            videoView.MediaPlayer = _mp;
         }
 
         private void DataVideoForm_Load(object sender, EventArgs e)
         {
             te = (TagElement)this.Tag;
+            data = (byte[])te.data;
+            extension = te.extension;
+
+            bPlay.Enabled = bPause.Enabled = bStop.Enabled = (data != null);
+
             showVideo();
         }
 
         private void showVideo()
         {
-            if (te.data != null)
+            if (data != null)
             {
-                var stream = new MemoryStream((byte[])te.data);
+                var stream = new MemoryStream(data);
                 MediaInput mi = new StreamMediaInput(stream);
                 Media media = new Media(_libVLC, mi, null);
-                videoView1.MediaPlayer.Play(media);
+                videoView.MediaPlayer.Play(media);
                 media.Dispose();
             }
         }
@@ -65,9 +73,10 @@ namespace adEditor
             ofd.RestoreDirectory = true;
             if (ofd.ShowDialog() == DialogResult.OK)
             {
-                byte[] b = File.ReadAllBytes(ofd.FileName);
-                te.data = b;
-                te.extension = Path.GetExtension(ofd.FileName);
+                data = File.ReadAllBytes(ofd.FileName);
+                extension = Path.GetExtension(ofd.FileName).Substring(1).ToUpper(); ;
+
+                bPlay.Enabled = bPause.Enabled = bStop.Enabled = (data != null);
 
                 showVideo();
             }
@@ -82,19 +91,42 @@ namespace adEditor
 
         private void bPlay_Click(object sender, EventArgs e)
         {
-            if(videoView1.MediaPlayer.IsPlaying)
+            if (!videoView.MediaPlayer.IsPlaying)
             {
-                videoView1.MediaPlayer.Position = 0;
-            }
-            else
-            {
-                videoView1.MediaPlayer.Stop();
-                videoView1.MediaPlayer.Position = 0;                
-                videoView1.MediaPlayer.Play();
+                videoView.MediaPlayer.Play();
             }
         }
 
-        private void bClose_Click(object sender, EventArgs e)
+        private void bStop_Click(object sender, EventArgs e)
+        {
+            if (videoView.MediaPlayer.IsPlaying)
+            {
+                videoView.MediaPlayer.Stop();
+                videoView.MediaPlayer.Position = 0;
+            }            
+        }
+
+        private void bPause_Click(object sender, EventArgs e)
+        {
+            if (videoView.MediaPlayer.IsPlaying)
+            {
+                videoView.MediaPlayer.Pause();
+            }
+            else
+            {
+                videoView.MediaPlayer.Play();
+            }
+        }
+
+        private void bOk_Click(object sender, EventArgs e)
+        {
+            te.data = data;
+            te.extension = extension;
+
+            Close();
+        }
+
+        private void bCancel_Click(object sender, EventArgs e)
         {
             Close();
         }

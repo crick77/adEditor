@@ -46,16 +46,16 @@ namespace adEditor
             this.gbEdit.Size = new System.Drawing.Size(711, 73);
             this.gbEdit.TabIndex = 0;
             this.gbEdit.TabStop = false;
-            this.gbEdit.Text = "groupBox1";
+            this.gbEdit.Text = "varname";
             // 
             // lValue
             // 
             this.lValue.AutoSize = true;
             this.lValue.Location = new System.Drawing.Point(17, 35);
             this.lValue.Name = "lValue";
-            this.lValue.Size = new System.Drawing.Size(40, 13);
+            this.lValue.Size = new System.Drawing.Size(37, 13);
             this.lValue.TabIndex = 1;
-            this.lValue.Text = "&Valore:";
+            this.lValue.Text = "&Value:";
             // 
             // tbValue
             // 
@@ -67,21 +67,23 @@ namespace adEditor
             // 
             // bSave
             // 
+            this.bSave.DialogResult = System.Windows.Forms.DialogResult.OK;
             this.bSave.Location = new System.Drawing.Point(213, 111);
             this.bSave.Name = "bSave";
             this.bSave.Size = new System.Drawing.Size(75, 23);
             this.bSave.TabIndex = 1;
-            this.bSave.Text = "&Salva";
+            this.bSave.Text = "&Ok";
             this.bSave.UseVisualStyleBackColor = true;
             this.bSave.Click += new System.EventHandler(this.bSave_Click);
             // 
             // bCancel
             // 
+            this.bCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.bCancel.Location = new System.Drawing.Point(469, 111);
             this.bCancel.Name = "bCancel";
             this.bCancel.Size = new System.Drawing.Size(75, 23);
             this.bCancel.TabIndex = 2;
-            this.bCancel.Text = "&Annulla";
+            this.bCancel.Text = "&Cancel";
             this.bCancel.UseVisualStyleBackColor = true;
             this.bCancel.Click += new System.EventHandler(this.bCancel_Click);
             // 
@@ -90,11 +92,13 @@ namespace adEditor
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(733, 156);
+            this.ControlBox = false;
             this.Controls.Add(this.bCancel);
             this.Controls.Add(this.bSave);
             this.Controls.Add(this.gbEdit);
             this.Name = "StringEditForm";
-            this.Text = "Modifica dato";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.Text = "Edit value";
             this.Shown += new System.EventHandler(this.StringEditForm_Shown);
             this.gbEdit.ResumeLayout(false);
             this.gbEdit.PerformLayout();

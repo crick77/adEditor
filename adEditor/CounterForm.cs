@@ -24,7 +24,7 @@ namespace adEditor
             te = (TagElement)this.Tag;
             RefData rd = (RefData)te.data;
             nudValue.Value = (decimal)rd.data;
-            nudValue.Select();
+            nudValue.Select(0, nudValue.Text.Length);
         }
 
         private void bOk_Click(object sender, EventArgs e)

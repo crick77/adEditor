@@ -33,6 +33,9 @@ namespace adEditor
             this.bZoonIn = new System.Windows.Forms.Button();
             this.pdfRenderer = new PdfiumViewer.PdfRenderer();
             this.bZoomOut = new System.Windows.Forms.Button();
+            this.bOk = new System.Windows.Forms.Button();
+            this.bCancel = new System.Windows.Forms.Button();
+            this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.SuspendLayout();
             // 
             // bLoad
@@ -82,18 +85,54 @@ namespace adEditor
             this.bZoomOut.UseVisualStyleBackColor = true;
             this.bZoomOut.Click += new System.EventHandler(this.bZoomOut_Click);
             // 
+            // bOk
+            // 
+            this.bOk.DialogResult = System.Windows.Forms.DialogResult.OK;
+            this.bOk.Location = new System.Drawing.Point(528, 555);
+            this.bOk.Margin = new System.Windows.Forms.Padding(2);
+            this.bOk.Name = "bOk";
+            this.bOk.Size = new System.Drawing.Size(64, 29);
+            this.bOk.TabIndex = 7;
+            this.bOk.Text = "&Ok";
+            this.bOk.UseVisualStyleBackColor = true;
+            this.bOk.Click += new System.EventHandler(this.bOk_Click);
+            // 
+            // bCancel
+            // 
+            this.bCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+            this.bCancel.Location = new System.Drawing.Point(657, 555);
+            this.bCancel.Margin = new System.Windows.Forms.Padding(2);
+            this.bCancel.Name = "bCancel";
+            this.bCancel.Size = new System.Drawing.Size(64, 29);
+            this.bCancel.TabIndex = 8;
+            this.bCancel.Text = "&Cancel";
+            this.bCancel.UseVisualStyleBackColor = true;
+            this.bCancel.Click += new System.EventHandler(this.bCancel_Click);
+            // 
+            // openFileDialog
+            // 
+            this.openFileDialog.DefaultExt = "*.pdf";
+            this.openFileDialog.Filter = "PDF Files (*.pdf)|*.pdf";
+            this.openFileDialog.FilterIndex = 0;
+            this.openFileDialog.RestoreDirectory = true;
+            this.openFileDialog.Title = "Open PDF File";
+            // 
             // DataPDFForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(756, 595);
+            this.ControlBox = false;
+            this.Controls.Add(this.bCancel);
+            this.Controls.Add(this.bOk);
             this.Controls.Add(this.bZoomOut);
             this.Controls.Add(this.pdfRenderer);
             this.Controls.Add(this.bZoonIn);
             this.Controls.Add(this.bLoad);
             this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "DataPDFForm";
-            this.Text = "DataPDFForm";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.Text = "PDF Data";
             this.Load += new System.EventHandler(this.DataPDFForm_Load);
             this.ResumeLayout(false);
 
@@ -104,5 +143,8 @@ namespace adEditor
         private System.Windows.Forms.Button bZoonIn;
         private PdfiumViewer.PdfRenderer pdfRenderer;
         private System.Windows.Forms.Button bZoomOut;
+        private System.Windows.Forms.Button bOk;
+        private System.Windows.Forms.Button bCancel;
+        private System.Windows.Forms.OpenFileDialog openFileDialog;
     }
 }
