@@ -60,6 +60,7 @@
     <Compile Include="AboutForm.Designer.cs">
       <DependentUpon>AboutForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="ActiveDataFileFormat.cs" />
     <Compile Include="ComboBoxVar.cs" />
     <Compile Include="CounterForm.cs">
       <SubType>Form</SubType>
