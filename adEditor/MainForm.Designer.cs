@@ -61,6 +61,7 @@ namespace adEditor
             this.removeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.imageListNodes = new System.Windows.Forms.ImageList(this.components);
             this.saveFileDialog = new System.Windows.Forms.SaveFileDialog();
+            this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.mainMenu.SuspendLayout();
             this.contextMenuStrip.SuspendLayout();
             this.SuspendLayout();
@@ -73,8 +74,8 @@ namespace adEditor
             this.toolStripMenuItem1});
             this.mainMenu.Location = new System.Drawing.Point(0, 0);
             this.mainMenu.Name = "mainMenu";
-            this.mainMenu.Padding = new System.Windows.Forms.Padding(3, 1, 0, 1);
-            this.mainMenu.Size = new System.Drawing.Size(836, 24);
+            this.mainMenu.Padding = new System.Windows.Forms.Padding(4, 1, 0, 1);
+            this.mainMenu.Size = new System.Drawing.Size(1115, 26);
             this.mainMenu.TabIndex = 0;
             this.mainMenu.Text = "mainMenu";
             // 
@@ -87,14 +88,14 @@ namespace adEditor
             this.toolStripMenuItem2,
             this.exitToolStripMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
-            this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 22);
+            this.fileToolStripMenuItem.Size = new System.Drawing.Size(46, 24);
             this.fileToolStripMenuItem.Text = "&File";
             // 
             // openToolStripMenuItem
             // 
             this.openToolStripMenuItem.Name = "openToolStripMenuItem";
             this.openToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.N)));
-            this.openToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.openToolStripMenuItem.Size = new System.Drawing.Size(224, 26);
             this.openToolStripMenuItem.Text = "&New";
             this.openToolStripMenuItem.Click += new System.EventHandler(this.openToolStripMenuItem_Click);
             // 
@@ -102,27 +103,28 @@ namespace adEditor
             // 
             this.openToolStripMenuItem1.Name = "openToolStripMenuItem1";
             this.openToolStripMenuItem1.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.O)));
-            this.openToolStripMenuItem1.Size = new System.Drawing.Size(180, 22);
+            this.openToolStripMenuItem1.Size = new System.Drawing.Size(224, 26);
             this.openToolStripMenuItem1.Text = "&Open";
+            this.openToolStripMenuItem1.Click += new System.EventHandler(this.openToolStripMenuItem1_Click);
             // 
             // saveToolStripMenuItem
             // 
             this.saveToolStripMenuItem.Name = "saveToolStripMenuItem";
             this.saveToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
-            this.saveToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.saveToolStripMenuItem.Size = new System.Drawing.Size(224, 26);
             this.saveToolStripMenuItem.Text = "&Save";
             this.saveToolStripMenuItem.Click += new System.EventHandler(this.saveToolStripMenuItem_Click);
             // 
             // toolStripMenuItem2
             // 
             this.toolStripMenuItem2.Name = "toolStripMenuItem2";
-            this.toolStripMenuItem2.Size = new System.Drawing.Size(177, 6);
+            this.toolStripMenuItem2.Size = new System.Drawing.Size(221, 6);
             // 
             // exitToolStripMenuItem
             // 
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
             this.exitToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.F4)));
-            this.exitToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.exitToolStripMenuItem.Size = new System.Drawing.Size(224, 26);
             this.exitToolStripMenuItem.Text = "E&xit";
             this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
             // 
@@ -131,14 +133,14 @@ namespace adEditor
             this.toolStripMenuItem1.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.infoToolStripMenuItem});
             this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-            this.toolStripMenuItem1.Size = new System.Drawing.Size(24, 22);
+            this.toolStripMenuItem1.Size = new System.Drawing.Size(30, 24);
             this.toolStripMenuItem1.Text = "&?";
             // 
             // infoToolStripMenuItem
             // 
             this.infoToolStripMenuItem.Name = "infoToolStripMenuItem";
             this.infoToolStripMenuItem.ShortcutKeys = System.Windows.Forms.Keys.F1;
-            this.infoToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.infoToolStripMenuItem.Size = new System.Drawing.Size(142, 26);
             this.infoToolStripMenuItem.Text = "&Info";
             this.infoToolStripMenuItem.Click += new System.EventHandler(this.infoToolStripMenuItem_Click);
             // 
@@ -150,10 +152,11 @@ namespace adEditor
             this.treeViewItem.ContextMenuStrip = this.contextMenuStrip;
             this.treeViewItem.ImageIndex = 0;
             this.treeViewItem.ImageList = this.imageListNodes;
-            this.treeViewItem.Location = new System.Drawing.Point(0, 27);
+            this.treeViewItem.Location = new System.Drawing.Point(0, 33);
+            this.treeViewItem.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.treeViewItem.Name = "treeViewItem";
             this.treeViewItem.SelectedImageIndex = 0;
-            this.treeViewItem.Size = new System.Drawing.Size(836, 508);
+            this.treeViewItem.Size = new System.Drawing.Size(1113, 624);
             this.treeViewItem.TabIndex = 1;
             this.treeViewItem.DoubleClick += new System.EventHandler(this.treeViewItem_DoubleClick);
             // 
@@ -167,7 +170,7 @@ namespace adEditor
             this.toolStripMenuItem3,
             this.removeToolStripMenuItem});
             this.contextMenuStrip.Name = "contextMenuStrip";
-            this.contextMenuStrip.Size = new System.Drawing.Size(181, 120);
+            this.contextMenuStrip.Size = new System.Drawing.Size(210, 106);
             this.contextMenuStrip.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStrip_Opening);
             // 
             // addToolStripMenuItem
@@ -177,7 +180,7 @@ namespace adEditor
             this.varToolStripMenuItem,
             this.eventsToolStripMenuItem});
             this.addToolStripMenuItem.Name = "addToolStripMenuItem";
-            this.addToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.addToolStripMenuItem.Size = new System.Drawing.Size(209, 24);
             this.addToolStripMenuItem.Text = "&Add";
             // 
             // dataToolStripMenuItem
@@ -188,14 +191,14 @@ namespace adEditor
             this.imageToolStripMenuItem,
             this.videoToolStripMenuItem});
             this.dataToolStripMenuItem.Name = "dataToolStripMenuItem";
-            this.dataToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.dataToolStripMenuItem.Size = new System.Drawing.Size(161, 26);
             this.dataToolStripMenuItem.Text = "Data";
             // 
             // textToolStripMenuItem
             // 
             this.textToolStripMenuItem.Name = "textToolStripMenuItem";
             this.textToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.T)));
-            this.textToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.textToolStripMenuItem.Size = new System.Drawing.Size(201, 26);
             this.textToolStripMenuItem.Text = "Text...";
             this.textToolStripMenuItem.Click += new System.EventHandler(this.textToolStripMenuItem_Click);
             // 
@@ -203,7 +206,7 @@ namespace adEditor
             // 
             this.PDFToolStripMenuItem.Name = "PDFToolStripMenuItem";
             this.PDFToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.P)));
-            this.PDFToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.PDFToolStripMenuItem.Size = new System.Drawing.Size(201, 26);
             this.PDFToolStripMenuItem.Text = "PDF...";
             this.PDFToolStripMenuItem.Click += new System.EventHandler(this.pDFToolStripMenuItem_Click);
             // 
@@ -211,7 +214,7 @@ namespace adEditor
             // 
             this.imageToolStripMenuItem.Name = "imageToolStripMenuItem";
             this.imageToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.I)));
-            this.imageToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.imageToolStripMenuItem.Size = new System.Drawing.Size(201, 26);
             this.imageToolStripMenuItem.Text = "Image...";
             this.imageToolStripMenuItem.Click += new System.EventHandler(this.imageToolStripMenuItem_Click);
             // 
@@ -219,7 +222,7 @@ namespace adEditor
             // 
             this.videoToolStripMenuItem.Name = "videoToolStripMenuItem";
             this.videoToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.V)));
-            this.videoToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.videoToolStripMenuItem.Size = new System.Drawing.Size(201, 26);
             this.videoToolStripMenuItem.Text = "Video...";
             this.videoToolStripMenuItem.Click += new System.EventHandler(this.videoToolStripMenuItem_Click);
             // 
@@ -229,14 +232,14 @@ namespace adEditor
             this.addCounterToolStripMenuItem,
             this.addDateToolStripMenuItem});
             this.varToolStripMenuItem.Name = "varToolStripMenuItem";
-            this.varToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.varToolStripMenuItem.Size = new System.Drawing.Size(161, 26);
             this.varToolStripMenuItem.Text = "&Variables...";
             // 
             // addCounterToolStripMenuItem
             // 
             this.addCounterToolStripMenuItem.Name = "addCounterToolStripMenuItem";
             this.addCounterToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.C)));
-            this.addCounterToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.addCounterToolStripMenuItem.Size = new System.Drawing.Size(214, 26);
             this.addCounterToolStripMenuItem.Text = "&Counter";
             this.addCounterToolStripMenuItem.Click += new System.EventHandler(this.addCounterToolStripMenuItem_Click);
             // 
@@ -244,7 +247,7 @@ namespace adEditor
             // 
             this.addDateToolStripMenuItem.Name = "addDateToolStripMenuItem";
             this.addDateToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.D)));
-            this.addDateToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.addDateToolStripMenuItem.Size = new System.Drawing.Size(214, 26);
             this.addDateToolStripMenuItem.Text = "&Date/time";
             this.addDateToolStripMenuItem.Click += new System.EventHandler(this.addDateToolStripMenuItem_Click);
             // 
@@ -255,7 +258,7 @@ namespace adEditor
             this.onCopyToolStripMenuItem,
             this.onShareToolStripMenuItem});
             this.eventsToolStripMenuItem.Name = "eventsToolStripMenuItem";
-            this.eventsToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.eventsToolStripMenuItem.Size = new System.Drawing.Size(161, 26);
             this.eventsToolStripMenuItem.Text = "&Events...";
             // 
             // onreadToolStripMenuItem
@@ -263,7 +266,7 @@ namespace adEditor
             this.onreadToolStripMenuItem.Name = "onreadToolStripMenuItem";
             this.onreadToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)(((System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.Shift) 
             | System.Windows.Forms.Keys.R)));
-            this.onreadToolStripMenuItem.Size = new System.Drawing.Size(210, 22);
+            this.onreadToolStripMenuItem.Size = new System.Drawing.Size(261, 26);
             this.onreadToolStripMenuItem.Text = "on&Read";
             this.onreadToolStripMenuItem.Click += new System.EventHandler(this.onreadToolStripMenuItem_Click);
             // 
@@ -272,7 +275,7 @@ namespace adEditor
             this.onCopyToolStripMenuItem.Name = "onCopyToolStripMenuItem";
             this.onCopyToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)(((System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.Shift) 
             | System.Windows.Forms.Keys.C)));
-            this.onCopyToolStripMenuItem.Size = new System.Drawing.Size(210, 22);
+            this.onCopyToolStripMenuItem.Size = new System.Drawing.Size(261, 26);
             this.onCopyToolStripMenuItem.Text = "on&Copy";
             this.onCopyToolStripMenuItem.Click += new System.EventHandler(this.onCopyToolStripMenuItem_Click);
             // 
@@ -281,7 +284,7 @@ namespace adEditor
             this.onShareToolStripMenuItem.Name = "onShareToolStripMenuItem";
             this.onShareToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)(((System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.Shift) 
             | System.Windows.Forms.Keys.S)));
-            this.onShareToolStripMenuItem.Size = new System.Drawing.Size(210, 22);
+            this.onShareToolStripMenuItem.Size = new System.Drawing.Size(261, 26);
             this.onShareToolStripMenuItem.Text = "on&Share";
             this.onShareToolStripMenuItem.Click += new System.EventHandler(this.onShareToolStripMenuItem_Click);
             // 
@@ -289,7 +292,7 @@ namespace adEditor
             // 
             this.renameToolStripMenuItem.Name = "renameToolStripMenuItem";
             this.renameToolStripMenuItem.ShortcutKeys = System.Windows.Forms.Keys.F2;
-            this.renameToolStripMenuItem.Size = new System.Drawing.Size(178, 22);
+            this.renameToolStripMenuItem.Size = new System.Drawing.Size(209, 24);
             this.renameToolStripMenuItem.Text = "Re&name";
             this.renameToolStripMenuItem.Click += new System.EventHandler(this.renameToolStripMenuItem_Click);
             // 
@@ -297,20 +300,20 @@ namespace adEditor
             // 
             this.editToolStripMenuItem.Name = "editToolStripMenuItem";
             this.editToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.E)));
-            this.editToolStripMenuItem.Size = new System.Drawing.Size(178, 22);
+            this.editToolStripMenuItem.Size = new System.Drawing.Size(209, 24);
             this.editToolStripMenuItem.Text = "&Edit content";
             this.editToolStripMenuItem.Click += new System.EventHandler(this.editToolStripMenuItem_Click);
             // 
             // toolStripMenuItem3
             // 
             this.toolStripMenuItem3.Name = "toolStripMenuItem3";
-            this.toolStripMenuItem3.Size = new System.Drawing.Size(175, 6);
+            this.toolStripMenuItem3.Size = new System.Drawing.Size(206, 6);
             // 
             // removeToolStripMenuItem
             // 
             this.removeToolStripMenuItem.Name = "removeToolStripMenuItem";
             this.removeToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.X)));
-            this.removeToolStripMenuItem.Size = new System.Drawing.Size(178, 22);
+            this.removeToolStripMenuItem.Size = new System.Drawing.Size(209, 24);
             this.removeToolStripMenuItem.Text = "&Remove";
             this.removeToolStripMenuItem.Click += new System.EventHandler(this.removeToolStripMenuItem_Click);
             // 
@@ -334,14 +337,21 @@ namespace adEditor
             this.saveFileDialog.FilterIndex = 0;
             this.saveFileDialog.Title = "Save ActiveData file";
             // 
+            // openFileDialog
+            // 
+            this.openFileDialog.Filter = "ActiveData File (*.activedata)|*.activedata";
+            this.openFileDialog.FilterIndex = 0;
+            this.openFileDialog.Title = "Open ActiveData";
+            // 
             // MainForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(836, 536);
+            this.ClientSize = new System.Drawing.Size(1115, 660);
             this.Controls.Add(this.treeViewItem);
             this.Controls.Add(this.mainMenu);
             this.MainMenuStrip = this.mainMenu;
+            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.Name = "MainForm";
             this.Text = "adEditor";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
@@ -385,6 +395,7 @@ namespace adEditor
         private System.Windows.Forms.ToolStripMenuItem renameToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem3;
         private System.Windows.Forms.SaveFileDialog saveFileDialog;
+        private System.Windows.Forms.OpenFileDialog openFileDialog;
     }
 }
 

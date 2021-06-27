@@ -26,7 +26,7 @@ namespace adEditor
         {
             InitializeComponent();
 
-            dirty = false;
+            clearDirty();
         }
 
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
@@ -90,7 +90,8 @@ namespace adEditor
             treeViewItem.Nodes.Add(root);
             treeViewItem.ExpandAll();
 
-            dirty = false;
+            clearDirty();
+            Text = "adEditor - New";
         }
 
         private void contextMenuStrip_Opening(object sender, CancelEventArgs e)
@@ -140,7 +141,7 @@ namespace adEditor
                         {                            
                             te = (TagElement)sef.Tag;
                             selected.Text = te.name + ": " + (string)te.data;
-                            dirty = true;
+                            setDirty();
                         }
                         sef.Dispose();
                         break;
@@ -156,7 +157,7 @@ namespace adEditor
                             te = (TagElement)dtf.Tag;
                             string txt = Encoding.UTF8.GetString((byte[])te.data);
                             selected.Text = te.name + ": " + ellipsis(txt)+" ("+txt.Length+" characters).";
-                            dirty = true;
+                            setDirty();
                         }
                         dtf.Dispose();
                         break;
@@ -171,7 +172,7 @@ namespace adEditor
                             te = (TagElement)di.Tag;
                             byte[] d = (byte[])te.data;
                             selected.Text = te.name + ": " + te.extension+" ("+d.Length+" bytes).";
-                            dirty = true;
+                            setDirty();
                         }
                         di.Dispose();
                         break;
@@ -186,7 +187,7 @@ namespace adEditor
                             te = (TagElement)dvf.Tag;
                             byte[] d = (byte[])te.data;
                             selected.Text = te.name + ": " + te.extension + " (" + d.Length + " bytes).";
-                            dirty = true;
+                            setDirty();
                         }
                         dvf.Dispose();
                         break;
@@ -201,7 +202,7 @@ namespace adEditor
                             te = (TagElement)dpf.Tag;
                             byte[] d = (byte[])te.data;
                             selected.Text = te.name + ": " + te.extension + " (" + d.Length + " bytes).";
-                            dirty = true;
+                            setDirty();
                         }
                         dpf.Dispose();
                         break;
@@ -215,7 +216,7 @@ namespace adEditor
                         {
                             te = (TagElement)cf.Tag;
                             selected.Text = te.name + "= " + te.data;
-                            dirty = true;                            
+                            setDirty();                            
                         }
                         cf.Dispose();
                         break;
@@ -229,7 +230,7 @@ namespace adEditor
                         {
                             te = (TagElement)df.Tag;
                             selected.Text = te.name + "= " + te.data;
-                            dirty = true;
+                            setDirty();
                         }
                         df.Dispose();
                         break;
@@ -244,7 +245,7 @@ namespace adEditor
                         {
                             te.data = gf.Tag;
                             computerVarRef();
-                            dirty = true;
+                            setDirty();
                         }
                         gf.Dispose();
                         break;
@@ -259,7 +260,7 @@ namespace adEditor
                         {
                             te.data = gf.Tag;
                             computerVarRef();
-                            dirty = true;
+                            setDirty();
                         }
                         gf.Dispose();
                         break;
@@ -274,7 +275,7 @@ namespace adEditor
                         {
                             te.data = gf.Tag;
                             computerVarRef();
-                            dirty = true;                            
+                            setDirty();                            
                         }
                         gf.Dispose();
                         break;
@@ -711,6 +712,7 @@ namespace adEditor
                 dirty = false;
 
                 MessageBox.Show("File saved! "+ writtenSize + " bytes written.");
+                Text = "adEditor - " + saveFileDialog.FileName;
             }            
         }
        
@@ -789,6 +791,27 @@ namespace adEditor
             AboutForm af = new AboutForm();
             af.ShowDialog();
             af.Dispose();
+        }
+
+        private void openToolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            if(openFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                byte[] bytes = System.IO.File.ReadAllBytes(openFileDialog.FileName);
+                MessageBox.Show("Read all file, bytes: " + bytes.Length);
+                Text = "adEditor - " + openFileDialog.FileName;
+            }
+        }
+
+        private void setDirty()
+        {
+            dirty = true;
+            Text = Text + "*";
+        }
+        private void clearDirty()
+        {
+            dirty = false;
+            if (Text.EndsWith("*")) Text = Text.Substring(0, Text.Length - 1);
         }
     }
 }
