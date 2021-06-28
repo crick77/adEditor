@@ -49,7 +49,7 @@ namespace adEditor
 
             TreeNode n = new TreeNode("Version: 1.0");
             n.ImageIndex = n.SelectedImageIndex = 3;
-            n.Tag = new TagElement("S", "Version", 0, "1.3");
+            n.Tag = new TagElement("S", "Version", 0, "1.0");
             metaData.Nodes.Add(n);
             DateTime now = DateTime.Now;
             string c = now.ToString("dd-MM-yyyy HH:mm:ss");
@@ -754,7 +754,7 @@ namespace adEditor
         private byte versionToByte(string v)
         {
             string[] parts = v.Split('.');
-            byte ve = (byte)(Convert.ToByte(parts[0]) << 4);
+            byte ve = (byte)((Convert.ToByte(parts[0]) << 4) & 0xF0);
             byte sv = (byte)(Convert.ToByte(parts[1]) & 0x0F);
             return (byte)(ve + sv); 
         }
@@ -783,7 +783,7 @@ namespace adEditor
 
         private DialogResult checkEmpty()
         {
-            return MessageBox.Show("Unsaved changed were detected. Do you want to save it?", "Are you sure?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);                
+            return MessageBox.Show("Unsaved changes were detected. Do you want to save them?", "Are you sure?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);                
         }
 
         private void infoToolStripMenuItem_Click(object sender, EventArgs e)
