@@ -35,6 +35,7 @@ namespace adEditor
             this.bCancel = new System.Windows.Forms.Button();
             this.bLoad = new System.Windows.Forms.Button();
             this.ofd = new System.Windows.Forms.OpenFileDialog();
+            this.cbDegrade = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.pBox)).BeginInit();
             this.SuspendLayout();
             // 
@@ -97,12 +98,25 @@ namespace adEditor
             this.ofd.RestoreDirectory = true;
             this.ofd.Title = "Open Image";
             // 
+            // cbDegrade
+            // 
+            this.cbDegrade.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.cbDegrade.AutoSize = true;
+            this.cbDegrade.Location = new System.Drawing.Point(94, 266);
+            this.cbDegrade.Name = "cbDegrade";
+            this.cbDegrade.Size = new System.Drawing.Size(121, 17);
+            this.cbDegrade.TabIndex = 4;
+            this.cbDegrade.Text = "&Degrade each open";
+            this.cbDegrade.UseVisualStyleBackColor = true;
+            this.cbDegrade.CheckedChanged += new System.EventHandler(this.cbDegrade_CheckedChanged);
+            // 
             // DataImageForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(400, 293);
             this.ControlBox = false;
+            this.Controls.Add(this.cbDegrade);
             this.Controls.Add(this.bLoad);
             this.Controls.Add(this.bCancel);
             this.Controls.Add(this.bOk);
@@ -114,6 +128,7 @@ namespace adEditor
             this.Load += new System.EventHandler(this.DataImage_Load);
             ((System.ComponentModel.ISupportInitialize)(this.pBox)).EndInit();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -124,5 +139,6 @@ namespace adEditor
         private System.Windows.Forms.Button bCancel;
         private System.Windows.Forms.Button bLoad;
         private System.Windows.Forms.OpenFileDialog ofd;
+        private System.Windows.Forms.CheckBox cbDegrade;
     }
 }

@@ -19,6 +19,7 @@ namespace adEditor
         private TreeNode eventNode = null;
         private TreeNode metadataNode = null;
         private TreeNode dataNode = null;
+        private TreeNode openCountNode = null;
         private bool dirty;
         private SHA1Managed sha1 = new SHA1Managed();
 
@@ -61,6 +62,12 @@ namespace adEditor
             n = new TreeNode("Owner: " + c);
             n.Tag = new TagElement("S", "Owner", 64, c, true);
             metaData.Nodes.Add(n);
+
+            uint openCount = 7;
+            n = new TreeNode("Open count: "+ openCount);
+            n.Tag = new TagElement("-", "OpenCount", 0, openCount);
+            metaData.Nodes.Add(n);
+            openCountNode = n;
 
             n = new TreeNode("Guards");
             n.Tag = new TagElement(false);
@@ -164,7 +171,10 @@ namespace adEditor
                     }
                 case "I":
                     {
-                        DataImageForm di = new DataImageForm();
+                        TagElement countTe = (TagElement)openCountNode.Tag;
+                        this.Cursor = Cursors.WaitCursor;
+                        DataImageForm di = new DataImageForm((uint)countTe.data);
+                        this.Cursor = Cursors.Arrow;
                         di.Tag = te;                        
                         di.ShowDialog();
                         if(di.DialogResult == DialogResult.OK)
@@ -582,7 +592,7 @@ namespace adEditor
         }
 
         private void saveToolStripMenuItem_Click(object sender, EventArgs e)
-        {
+        {            
             if(dataNode!=null && dataNode.Nodes.Count<1)
             {
                 if (MessageBox.Show("You're going to save an empty ActiveData file. Is that you want?", "Are you sure?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Exclamation) != DialogResult.Yes) return;
@@ -602,8 +612,9 @@ namespace adEditor
                 te = (TagElement)metadataNode.Nodes[2].Tag;
                 adf.owner = padStringToByteArray((string)te.data, 64);
 
-                adf.metaDataHash = padStringToByteArray("12345678901234567890");
-                adf.dataHash = padStringToByteArray("12345678901234567890");
+                adf.metaDataHash = new byte[20].Initialize(0);
+                adf.dataHash = new byte[20].Initialize(0);
+                adf.openCount = 0;
 
                 adf.counter = new CounterVar[6];
                 adf.datetime = new DateVar[6];
@@ -711,7 +722,7 @@ namespace adEditor
                 s.Close();
                 dirty = false;
 
-                MessageBox.Show("File saved! "+ writtenSize + " bytes written.");
+                MessageBox.Show("File saved! "+ writtenSize + " bytes written. ("+ headerSizePad +") padding bytes.");
                 Text = "adEditor - " + saveFileDialog.FileName;
             }            
         }
@@ -800,6 +811,48 @@ namespace adEditor
                 byte[] bytes = System.IO.File.ReadAllBytes(openFileDialog.FileName);
                 MessageBox.Show("Read all file, bytes: " + bytes.Length);
                 Text = "adEditor - " + openFileDialog.FileName;
+
+                int BufferSize = Marshal.SizeOf(typeof(ActiveDataFile));
+                byte[] buff = new byte[BufferSize];
+                Array.Copy(bytes, 0, buff, 0, BufferSize);
+                GCHandle handle = GCHandle.Alloc(buff, GCHandleType.Pinned);
+
+                ActiveDataFile adf = (ActiveDataFile)Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(ActiveDataFile));
+
+                handle.Free();
+
+                treeViewItem.Nodes.Clear();
+
+                TreeNode root = new TreeNode("ActiveData");
+                root.Tag = new TagElement("-");
+                TreeNode metaData = new TreeNode("Meta-Data");
+                metaData.ImageIndex = 0;
+                metaData.Tag = new TagElement("-");
+
+                String ver = ((adf.version & 0xF0) >> 4) + "." + (adf.version & 0x0F);
+                TreeNode n = new TreeNode("Version: " + ver);
+                n.ImageIndex = n.SelectedImageIndex = 3;
+                n.Tag = new TagElement("S", "Version", 0, ver);
+                metaData.Nodes.Add(n);
+
+                DateTime dt = new DateTime(adf.createTime);
+                string c = dt.ToString("dd-MM-yyyy HH:mm:ss");
+                n = new TreeNode("Created: " + c);
+                n.Tag = new TagElement("D", "Created", 0, dt);
+                metaData.Nodes.Add(n);
+
+                c = Encoding.UTF8.GetString(adf.owner);
+                n = new TreeNode("Owner: " + c);
+                n.Tag = new TagElement("S", "Owner", 64, c);
+                metaData.Nodes.Add(n);
+
+                n = new TreeNode("Open count: " + adf.openCount);
+                n.Tag = new TagElement("-", "OpenCount", 0, adf.openCount);
+                metaData.Nodes.Add(n);
+
+                root.Nodes.Add(metaData);
+                treeViewItem.Nodes.Add(root);
+                treeViewItem.ExpandAll();
             }
         }
 

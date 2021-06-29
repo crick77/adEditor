@@ -15,6 +15,7 @@ namespace adEditor
         public bool editable;
         public bool removable;
         public string extension;
+        public uint flag;
 
         public TagElement(string type)
         {
