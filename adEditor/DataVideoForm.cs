@@ -21,7 +21,7 @@ namespace adEditor
         byte[] data;
         string extension;
 
-        public DataVideoForm()
+        public DataVideoForm(bool viewable)
         {
             InitializeComponent();
 
@@ -29,6 +29,8 @@ namespace adEditor
             _libVLC = new LibVLC();
             _mp = new MediaPlayer(_libVLC);
             videoView.MediaPlayer = _mp;
+
+            bOk.Enabled = bLoad.Enabled = !viewable;
         }
 
         private void DataVideoForm_Load(object sender, EventArgs e)

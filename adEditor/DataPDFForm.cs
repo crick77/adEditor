@@ -18,12 +18,13 @@ namespace adEditor
         byte[] data;
         string extension;
 
-        public DataPDFForm()
+        public DataPDFForm(bool viewable)
         {
             InitializeComponent();
 
             data = null;
             extension = null;
+            bOk.Enabled = bLoad.Enabled = !viewable;
         }
 
         private void bLoad_Click(object sender, EventArgs e)

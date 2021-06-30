@@ -30,7 +30,7 @@ namespace adEditor
             clearDirty();
         }
 
-        private void openToolStripMenuItem_Click(object sender, EventArgs e)
+        private void newToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (dirty)
             {
@@ -156,7 +156,7 @@ namespace adEditor
 
                 case "T":
                     {
-                        DataTextForm dtf = new DataTextForm();
+                        DataTextForm dtf = new DataTextForm(te.viewable);
                         dtf.Tag = te;
                         dtf.ShowDialog();
                         if (dtf.DialogResult == DialogResult.OK)
@@ -173,7 +173,7 @@ namespace adEditor
                     {
                         TagElement countTe = (TagElement)openCountNode.Tag;
                         this.Cursor = Cursors.WaitCursor;
-                        DataImageForm di = new DataImageForm((uint)countTe.data);
+                        DataImageForm di = new DataImageForm(te.viewable, (uint)countTe.data);
                         this.Cursor = Cursors.Arrow;
                         di.Tag = te;                        
                         di.ShowDialog();
@@ -189,7 +189,7 @@ namespace adEditor
                     }
                 case "V":
                     {
-                        DataVideoForm dvf = new DataVideoForm();
+                        DataVideoForm dvf = new DataVideoForm(te.viewable);
                         dvf.Tag = te;                        
                         dvf.ShowDialog();
                         if (dvf.DialogResult == DialogResult.OK)
@@ -204,7 +204,7 @@ namespace adEditor
                     }
                 case "P":
                     {
-                        DataPDFForm dpf = new DataPDFForm();
+                        DataPDFForm dpf = new DataPDFForm(te.viewable);
                         dpf.Tag = te;                        
                         dpf.ShowDialog();
                         if (dpf.DialogResult == DialogResult.OK)
@@ -688,7 +688,7 @@ namespace adEditor
                     byte[] data = (byte[])te.data;
                     ActiveDataFields adfld = new ActiveDataFields();
                     adfld.fieldName = padStringToByteArray(te.name, 32);
-                    adfld.extension = padStringToByteArray(te.extension, 32);
+                    adfld.extension = padStringToByteArray(te.extension+"|"+te.type, 32);
                     adfld.fieldSize = (uint)data.Length;
 
                     // compute size of buffer
@@ -804,7 +804,7 @@ namespace adEditor
             af.Dispose();
         }
 
-        private void openToolStripMenuItem1_Click(object sender, EventArgs e)
+        private void openToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if(openFileDialog.ShowDialog() == DialogResult.OK)
             {
@@ -849,11 +849,71 @@ namespace adEditor
                 n = new TreeNode("Open count: " + adf.openCount);
                 n.Tag = new TagElement("-", "OpenCount", 0, adf.openCount);
                 metaData.Nodes.Add(n);
+                openCountNode = n;
+                
+                TreeNode data = new TreeNode("Data");
+                data.Tag = new TagElement("D");
+                data.ImageIndex = data.SelectedImageIndex = 1;
+
+                byte[] mdHash = new byte[20];
+                byte[] dHash = new byte[20];
+                for (int i = 0; i < 20; ++i)
+                {
+                    mdHash[i] = adf.metaDataHash[i];
+                    dHash[i] = adf.dataHash[i];
+                    adf.metaDataHash[i] = 0;
+                    adf.dataHash[i] = 0;
+                }
+                adf.metaDataHash = sha1.ComputeHash(ActiveDataFileToBytes(adf));
+                if(!equalHash(adf.metaDataHash, mdHash))
+                {
+                    MessageBox.Show("The file is corrupted.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    treeViewItem.Nodes.Clear();
+                    return;
+                }
+
+                long dataSize = 0;
+                for(int i=0;i<adf.dataCount;i++)
+                {
+                    BufferSize = Marshal.SizeOf(typeof(ActiveDataFields));
+                    buff = new byte[BufferSize];
+                    Array.Copy(bytes, 2048+dataSize, buff, 0, BufferSize);
+                    handle = GCHandle.Alloc(buff, GCHandleType.Pinned);
+
+                    ActiveDataFields adFld = (ActiveDataFields)Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(ActiveDataFields));
+
+                    handle.Free();
+
+                    string fieldName = byteArrayToString(adFld.fieldName);
+                    string[] extension = byteArrayToString(adFld.extension).Split('|');
+                    TreeNode n2 = new TreeNode(fieldName + ": " + extension[0]+" ("+adFld.fieldSize+" characters).");
+                    byte[] _b = new byte[adFld.fieldSize];
+                    Array.Copy(bytes, 2048 + dataSize+BufferSize, _b, 0, adFld.fieldSize);
+                    TagElement te = new TagElement(extension[1], fieldName, 0, _b, true);
+                    te.viewable = true;
+                    te.flag = adFld.flag;
+                    n2.Tag = te;
+
+                    data.Nodes.Add(n2);
+
+                    dataSize = dataSize + BufferSize + adFld.fieldSize;
+                }
 
                 root.Nodes.Add(metaData);
+                root.Nodes.Add(data);
                 treeViewItem.Nodes.Add(root);
                 treeViewItem.ExpandAll();
             }
+        }
+
+        private bool equalHash(byte[] h1, byte[] h2)
+        {
+            if (h1.Length != h2.Length) return false;
+            for(int i = 0;i<h1.Length;++i)
+            {
+                if (h1[i] != h2[i]) return false;
+            }
+            return true;
         }
 
         private void setDirty()
@@ -865,6 +925,18 @@ namespace adEditor
         {
             dirty = false;
             if (Text.EndsWith("*")) Text = Text.Substring(0, Text.Length - 1);
+        }
+
+        private string byteArrayToString(byte[] b)
+        {
+            string s = Encoding.UTF8.GetString(b);
+            string s2 = "";
+            foreach(char c in s.ToCharArray())
+            {
+                if (c == '\0') return s2;
+                s2 += c;
+            }
+            return s2;
         }
     }
 }

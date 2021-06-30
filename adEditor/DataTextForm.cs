@@ -15,9 +15,12 @@ namespace adEditor
     {
         private TagElement te;        
 
-        public DataTextForm()
+        public DataTextForm(bool viewable)
         {
             InitializeComponent();
+
+            bOk.Enabled = bLoadFromFile.Enabled = !viewable;
+            tbText.ReadOnly = viewable;
         }
 
         private void DataTextForm_Load(object sender, EventArgs e)

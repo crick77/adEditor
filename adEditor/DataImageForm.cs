@@ -17,13 +17,14 @@ namespace adEditor
         byte[] data;
         string extension;
         uint flag;
-        uint openCounter;
+        uint openCounter;        
 
-        public DataImageForm(uint openCounter)
+        public DataImageForm(bool viewable, uint openCounter)
         {
             InitializeComponent();
 
             this.openCounter = openCounter;
+            bLoad.Enabled = bOk.Enabled = cbDegrade.Enabled = !viewable;
         }
         
         private void bOk_Click(object sender, EventArgs e)

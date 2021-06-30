@@ -38,6 +38,9 @@ namespace adEditor
             // 
             // tbText
             // 
+            this.tbText.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.tbText.Location = new System.Drawing.Point(31, 28);
             this.tbText.Margin = new System.Windows.Forms.Padding(2);
             this.tbText.Multiline = true;
@@ -49,6 +52,7 @@ namespace adEditor
             // 
             // bOk
             // 
+            this.bOk.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.bOk.DialogResult = System.Windows.Forms.DialogResult.OK;
             this.bOk.Location = new System.Drawing.Point(398, 130);
             this.bOk.Margin = new System.Windows.Forms.Padding(2);
@@ -61,6 +65,7 @@ namespace adEditor
             // 
             // bCancel
             // 
+            this.bCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.bCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.bCancel.Location = new System.Drawing.Point(577, 130);
             this.bCancel.Margin = new System.Windows.Forms.Padding(2);
@@ -73,7 +78,8 @@ namespace adEditor
             // 
             // bLoadFromFile
             // 
-            this.bLoadFromFile.Location = new System.Drawing.Point(58, 130);
+            this.bLoadFromFile.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.bLoadFromFile.Location = new System.Drawing.Point(31, 130);
             this.bLoadFromFile.Margin = new System.Windows.Forms.Padding(2);
             this.bLoadFromFile.Name = "bLoadFromFile";
             this.bLoadFromFile.Size = new System.Drawing.Size(104, 31);
