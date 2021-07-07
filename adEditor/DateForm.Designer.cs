@@ -33,6 +33,7 @@ namespace adEditor
             this.dtPicker = new System.Windows.Forms.DateTimePicker();
             this.bOk = new System.Windows.Forms.Button();
             this.bCancel = new System.Windows.Forms.Button();
+            this.cbEnabled = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // label1
@@ -56,7 +57,7 @@ namespace adEditor
             // bOk
             // 
             this.bOk.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.bOk.Location = new System.Drawing.Point(116, 75);
+            this.bOk.Location = new System.Drawing.Point(115, 117);
             this.bOk.Name = "bOk";
             this.bOk.Size = new System.Drawing.Size(75, 23);
             this.bOk.TabIndex = 2;
@@ -67,7 +68,7 @@ namespace adEditor
             // bCancel
             // 
             this.bCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.bCancel.Location = new System.Drawing.Point(241, 75);
+            this.bCancel.Location = new System.Drawing.Point(240, 117);
             this.bCancel.Name = "bCancel";
             this.bCancel.Size = new System.Drawing.Size(75, 23);
             this.bCancel.TabIndex = 3;
@@ -75,12 +76,24 @@ namespace adEditor
             this.bCancel.UseVisualStyleBackColor = true;
             this.bCancel.Click += new System.EventHandler(this.bCancel_Click);
             // 
+            // cbEnabled
+            // 
+            this.cbEnabled.AutoSize = true;
+            this.cbEnabled.Location = new System.Drawing.Point(99, 64);
+            this.cbEnabled.Name = "cbEnabled";
+            this.cbEnabled.Size = new System.Drawing.Size(131, 17);
+            this.cbEnabled.TabIndex = 4;
+            this.cbEnabled.Text = "Eanble date expiration";
+            this.cbEnabled.UseVisualStyleBackColor = true;
+            this.cbEnabled.CheckedChanged += new System.EventHandler(this.cbEnabled_CheckedChanged);
+            // 
             // DateForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(429, 120);
+            this.ClientSize = new System.Drawing.Size(429, 166);
             this.ControlBox = false;
+            this.Controls.Add(this.cbEnabled);
             this.Controls.Add(this.bCancel);
             this.Controls.Add(this.bOk);
             this.Controls.Add(this.dtPicker);
@@ -100,5 +113,6 @@ namespace adEditor
         private System.Windows.Forms.DateTimePicker dtPicker;
         private System.Windows.Forms.Button bOk;
         private System.Windows.Forms.Button bCancel;
+        private System.Windows.Forms.CheckBox cbEnabled;
     }
 }

@@ -72,9 +72,9 @@ namespace adEditor
             this.label1.AutoSize = true;
             this.label1.Location = new System.Drawing.Point(36, 33);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(77, 13);
+            this.label1.Size = new System.Drawing.Size(61, 13);
             this.label1.TabIndex = 3;
-            this.label1.Text = "Variable name:";
+            this.label1.Text = "Field name:";
             // 
             // NameForm
             // 
@@ -89,7 +89,7 @@ namespace adEditor
             this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "NameForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
-            this.Text = "Add/rename variable";
+            this.Text = "Add/rename field";
             this.Load += new System.EventHandler(this.NameForm_Load);
             this.ResumeLayout(false);
             this.PerformLayout();

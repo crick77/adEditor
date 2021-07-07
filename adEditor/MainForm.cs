@@ -17,11 +17,10 @@ namespace adEditor
 {    
     public partial class MainForm : Form
     {
-        private TreeNode varNode = null;
-        private TreeNode eventNode = null;
-        private TreeNode metadataNode = null;
         private TreeNode dataNode = null;
+        private TreeNode infoNode = null;
         private TreeNode openCountNode = null;
+        private TreeNode dataFieldCountNode = null;
         private bool dirty;
         private SHA1Managed sha1 = new SHA1Managed();
 
@@ -43,60 +42,62 @@ namespace adEditor
 
             treeViewItem.Nodes.Clear();
 
-            /*TreeNode root = new TreeNode("ActiveData");
+            TreeNode root = new TreeNode("ActiveData");
             root.Tag = new TagElement("-");
+            
             TreeNode info = new TreeNode("Information");
             info.ImageIndex = 0;
             info.Tag = new TagElement("-");
-            infoNode = info;
 
             TreeNode n = new TreeNode("Version: 1.0");
             n.ImageIndex = n.SelectedImageIndex = 3;
-            n.Tag = new TagElement("S", "Version", 0, "1.0");
-            metaData.Nodes.Add(n);
+            n.Tag = new TagElement("S", "Version", 0, versionToByte("1.0"));
+            info.Nodes.Add(n);
+
             DateTime now = DateTime.Now;
-            string c = now.ToString("dd-MM-yyyy HH:mm:ss");
-            n = new TreeNode("Created: "+c);
+            n = new TreeNode("Created: "+now.ToString("dd-MM-yyyy HH:mm:ss"));
             n.Tag = new TagElement("D", "Created", 0, now);
-            metaData.Nodes.Add(n);
+            info.Nodes.Add(n);
 
-            c = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
-            n = new TreeNode("Owner: " + c);
-            n.Tag = new TagElement("S", "Owner", 64, c, true);
-            metaData.Nodes.Add(n);
+            string s = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
+            n = new TreeNode("Owner: " + s);
+            n.Tag = new TagElement("S", "Owner", 64, s, true);
+            info.Nodes.Add(n);
 
-            uint openCount = 7;
+            uint openCount = 0;
             n = new TreeNode("Open count: "+ openCount);
             n.Tag = new TagElement("-", "OpenCount", 0, openCount);
-            metaData.Nodes.Add(n);
-            openCountNode = n;
+            info.Nodes.Add(n);
 
-            n = new TreeNode("Guards");
-            n.Tag = new TagElement(false);
-            n.ImageIndex = n.SelectedImageIndex = 7;
-            TreeNode g = n;
-            metaData.Nodes.Add(n);            
+            int expireCount = -1;
+            n = new TreeNode("Expire count: " + (expireCount < 0 ? "NO EXPIRE" : expireCount.ToString()));
+            n.Tag = new TagElement("VC", "Expire count: ", 0, expireCount, true);
+            info.Nodes.Add(n);
+            
+            n = new TreeNode("Expire date: NO EXPIRE");
+            n.Tag = new TagElement("VD", "Expire date: ", 0, null, true);
+            info.Nodes.Add(n);
 
-            n = new TreeNode("Variables");
-            n.Tag = new TagElement("+V");
-            n.ImageIndex = n.SelectedImageIndex = 8;
-            g.Nodes.Add(n);
-            varNode = n;
+            n = new TreeNode("Allow resharing: NO");
+            n.Tag = new TagElement("W", "Allow resharing: ", 0, false, true);
+            info.Nodes.Add(n);
 
-            n = new TreeNode("Events");
-            n.Tag = new TagElement("+E");
-            n.ImageIndex = n.SelectedImageIndex = 9;
-            g.Nodes.Add(n);
-            eventNode = n;
+            n = new TreeNode("Data field #: 0");
+            n.Tag = new TagElement("-", "Data field #: ", 0, 0);
+            info.Nodes.Add(n);
+            dataFieldCountNode = n;
 
             TreeNode data = new TreeNode("Data");
             data.Tag = new TagElement("+D");
             data.ImageIndex = data.SelectedImageIndex = 1;
-            root.Nodes.Add(metaData);
-            root.Nodes.Add(data);
+
+            infoNode = info;
             dataNode = data;
 
-            treeViewItem.Nodes.Add(root);*/
+            root.Nodes.Add(info);
+            root.Nodes.Add(data);            
+
+            treeViewItem.Nodes.Add(root);
             treeViewItem.ExpandAll();
 
             clearDirty();
@@ -125,9 +126,7 @@ namespace adEditor
                         
             editToolStripMenuItem.Enabled = editEn;
 
-            dataToolStripMenuItem.Enabled = dataEn;
-            varToolStripMenuItem.Enabled = varEn;
-            eventsToolStripMenuItem.Enabled = eventEn;
+            addToolStripMenuItem.Enabled = dataEn;            
             addToolStripMenuItem.Enabled = (dataEn || varEn || eventEn);
 
             removeToolStripMenuItem.Enabled = removeEn;
@@ -222,13 +221,14 @@ namespace adEditor
                 case "VC": // Value-Counter
                     {
                         CounterForm cf = new CounterForm();
-                        cf.Tag = te;                        
+                        cf.Tag = te;
                         cf.ShowDialog();
                         if (cf.DialogResult == DialogResult.OK)
                         {
                             te = (TagElement)cf.Tag;
-                            selected.Text = te.name + "= " + te.data;
-                            setDirty();                            
+                            int v = (int)te.data;
+                            selected.Text = te.name + ((v < 0) ? "NO EXPIRE" : v.ToString());
+                            setDirty();
                         }
                         cf.Dispose();
                         break;
@@ -236,60 +236,68 @@ namespace adEditor
                 case "VD": // Value-Date
                     {
                         DateForm df = new DateForm();
-                        df.Tag = te;                        
+                        df.Tag = te;
                         df.ShowDialog();
                         if (df.DialogResult == DialogResult.OK)
                         {
                             te = (TagElement)df.Tag;
-                            selected.Text = te.name + "= " + te.data;
+                            selected.Text = te.name + ((te.data == null) ? "NO EXPIRE" : te.data);
                             setDirty();
                         }
                         df.Dispose();
                         break;
                     }
-                case "OR": // onread
+                //case "OR": // onread
+                //    {
+                //        GuardsForm gf = populateGuardsForm();
+                //        gf.Text = "onRead event";
+                //        gf.Tag = te.data;                        
+                //        gf.ShowDialog();
+                //        if(gf.DialogResult == DialogResult.OK)
+                //        {
+                //            te.data = gf.Tag;
+                //            computerVarRef();
+                //            setDirty();
+                //        }
+                //        gf.Dispose();
+                //        break;
+                //    }
+                //case "OC": // oncopy
+                //    {
+                //        GuardsForm gf = populateGuardsForm();
+                //        gf.Text = "onCopy event";
+                //        gf.Tag = te.data;                        
+                //        gf.ShowDialog();
+                //        if (gf.DialogResult == DialogResult.OK)
+                //        {
+                //            te.data = gf.Tag;
+                //            computerVarRef();
+                //            setDirty();
+                //        }
+                //        gf.Dispose();
+                //        break;
+                //    }
+                //case "OS": // onshare
+                //    {
+                //        GuardsForm gf = populateGuardsForm();
+                //        gf.Text = "onShare event";
+                //        gf.Tag = te.data;                       
+                //        gf.ShowDialog();
+                //        if (gf.DialogResult == DialogResult.OK)
+                //        {
+                //            te.data = gf.Tag;
+                //            computerVarRef();
+                //            setDirty();                            
+                //        }
+                //        gf.Dispose();
+                //        break;
+                //    }
+                case "W": // switch
                     {
-                        GuardsForm gf = populateGuardsForm();
-                        gf.Text = "onRead event";
-                        gf.Tag = te.data;                        
-                        gf.ShowDialog();
-                        if(gf.DialogResult == DialogResult.OK)
-                        {
-                            te.data = gf.Tag;
-                            computerVarRef();
-                            setDirty();
-                        }
-                        gf.Dispose();
-                        break;
-                    }
-                case "OC": // oncopy
-                    {
-                        GuardsForm gf = populateGuardsForm();
-                        gf.Text = "onCopy event";
-                        gf.Tag = te.data;                        
-                        gf.ShowDialog();
-                        if (gf.DialogResult == DialogResult.OK)
-                        {
-                            te.data = gf.Tag;
-                            computerVarRef();
-                            setDirty();
-                        }
-                        gf.Dispose();
-                        break;
-                    }
-                case "OS": // onshare
-                    {
-                        GuardsForm gf = populateGuardsForm();
-                        gf.Text = "onShare event";
-                        gf.Tag = te.data;                       
-                        gf.ShowDialog();
-                        if (gf.DialogResult == DialogResult.OK)
-                        {
-                            te.data = gf.Tag;
-                            computerVarRef();
-                            setDirty();                            
-                        }
-                        gf.Dispose();
+                        bool v = (bool)te.data;
+                        v = !v;
+                        te.data = v;
+                        selected.Text = te.name + (v ? "YES" : "NO");
                         break;
                     }
             } // switch
@@ -347,6 +355,11 @@ namespace adEditor
             selected.Nodes.Add(tn);
             selected.ExpandAll();
 
+            te = (TagElement)dataFieldCountNode.Tag;
+            int count = (int)te.data;
+            te.data = count+1;
+            dataFieldCountNode.Text = te.name + te.data;
+
             return tn;
         }
 
@@ -358,192 +371,21 @@ namespace adEditor
         private void pDFToolStripMenuItem_Click(object sender, EventArgs e)
         {
             addDataNode(dataNode, "P", 32, "PDF", 6);
-        }
-
-        private void onreadToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            foreach (TreeNode n in eventNode.Nodes)
-            {
-                if (n.Text == "onRead")
-                {
-                    treeViewItem.SelectedNode = n;
-                    editToolStripMenuItem_Click(null, null);
-                    return;
-                }
-            }
-
-            GuardsForm gf = populateGuardsForm();
-            gf.Text = "onRead event";
-            gf.ShowDialog();
-            if(gf.DialogResult == DialogResult.OK && gf.Tag!=null)
-            {
-                Guard g = (Guard)gf.Tag;
-                
-                TreeNode tn = new TreeNode("onRead");
-                tn.Tag = new TagElement("OR", "onRead", 0, g, true, true);
-                eventNode.Nodes.Add(tn);
-                eventNode.ExpandAll();
-
-                computerVarRef();               
-            }
-            gf.Dispose();
-        }
-
-        private void addCounterToolStripMenuItem_Click(object sender, EventArgs e)
-        {            
-            if(countVars("VC") == 6)
-            {
-                MessageBox.Show("You cannot add more than 6 counter vars.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-                return;
-            }
-
-            RefData rd = new RefData((decimal)1);
-            addDataNode(varNode, "VC", 22, "Counter", 8, true, "=", rd);
-        }
-
-        private int countVars(string type)
-        {
-            int count = 0;
-            foreach (TreeNode n in varNode.Nodes)
-            {
-                TagElement te = (TagElement)n.Tag;
-                if (te.type == type) count++;
-            }
-
-            return count;
-        }
-
-        private GuardsForm populateGuardsForm()
-        {
-            GuardsForm gf = new GuardsForm();
-
-            foreach (TreeNode n in varNode.Nodes)
-            {
-                TagElement _te = (TagElement)n.Tag;
-                if (_te.type == "VC")
-                {
-                    RefData rd = (RefData)_te.data;
-                    gf.addCounterVar(_te.name, rd.guid, (decimal)rd.data);
-                }
-                if(_te.type == "VD")
-                {
-                    RefData rd = (RefData)_te.data;
-                    gf.addExpireVar(_te.name, rd.guid, (DateTime)rd.data);
-                }
-            }
-
-            return gf;
-        }
-
-        private void computerVarRef()
-        {
-            foreach(TreeNode v in varNode.Nodes)
-            {               
-                int refCount = 0;
-                
-                TagElement tev = (TagElement)v.Tag;
-                RefData rd = (RefData)tev.data;
-                foreach (TreeNode g in eventNode.Nodes)
-                {
-                    TagElement teg = (TagElement)g.Tag;
-                    Guard guard = (Guard)teg.data;
-                    if (guard.varDateGuid == rd.guid || guard.varCounterGuid == rd.guid) refCount++;                    
-                }
-
-                rd.refCount = refCount;
-                v.Text = tev.name + "= " + tev.data;
-            }
-        }
-
-        private void addDateToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            if (countVars("VD") == 6)
-            {
-                MessageBox.Show("You cannot add more than 6 date/time vars.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
-                return;
-            }
-
-            RefData rd = new RefData(DateTime.Now);
-            addDataNode(varNode, "VD", 22, "Date/Time", 8, true, "=", rd);
-        }
-
-        private void onCopyToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            foreach (TreeNode n in eventNode.Nodes)
-            {
-                if (n.Text == "onCopy")
-                {
-                    treeViewItem.SelectedNode = n;
-                    editToolStripMenuItem_Click(null, null);
-                    return;
-                }
-            }
-
-            GuardsForm gf = populateGuardsForm();
-            gf.Text = "onCopy event";
-            gf.ShowDialog();
-            if (gf.DialogResult == DialogResult.OK && gf.Tag != null)
-            {
-                Guard g = (Guard)gf.Tag;
-
-                TreeNode tn = new TreeNode("onCopy");
-                tn.Tag = new TagElement("OC", "onCopy", 0, g, true, true);
-                eventNode.Nodes.Add(tn);
-                eventNode.ExpandAll();
-
-                computerVarRef();
-            }
-            gf.Dispose();
-        }
-
-        private void onShareToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            foreach (TreeNode n in eventNode.Nodes)
-            {
-                if (n.Text == "onShare")
-                {
-                    treeViewItem.SelectedNode = n;
-                    editToolStripMenuItem_Click(null, null);
-                    return;
-                }
-            }
-
-            GuardsForm gf = populateGuardsForm();
-            gf.Text = "onShare event";
-            gf.ShowDialog();
-            if (gf.DialogResult == DialogResult.OK && gf.Tag != null)
-            {
-                Guard g = (Guard)gf.Tag;
-
-                TreeNode tn = new TreeNode("onShare");
-                tn.Tag = new TagElement("OS", "onShare", 0, g, true, true);
-                eventNode.Nodes.Add(tn);
-                eventNode.ExpandAll();
-
-                computerVarRef();
-            }
-            gf.Dispose();
-        }
-
+        }        
+                        
         private void removeToolStripMenuItem_Click(object sender, EventArgs e)
         {
             TagElement te = (TagElement)treeViewItem.SelectedNode.Tag;
             if(!te.removable) return;            
 
-            if(te.data is RefData)
-            {
-                RefData rd = (RefData)te.data;
-                if(rd.refCount>0)
-                {
-                    MessageBox.Show("Item is referenced "+rd.refCount+" times. Please remove reference and retry.", "Attention");
-                    return;
-                }
-            }
-
             if (MessageBox.Show("Sure to remove?", "Remove", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
             {
                 treeViewItem.Nodes.Remove(treeViewItem.SelectedNode);
-                computerVarRef();
+
+                te = (TagElement)dataFieldCountNode.Tag;
+                int count = (int)te.data;
+                te.data = count - 1;
+                dataFieldCountNode.Text = te.name + te.data;
             }
         }
 
@@ -602,73 +444,62 @@ namespace adEditor
 
             if(saveFileDialog.ShowDialog()==DialogResult.OK)
             {
+                PubKeyForm pbf = new PubKeyForm();
+                if (pbf.ShowDialog() == DialogResult.Cancel) return;
+                string publicKey = (string)pbf.Tag;
+                pbf.Dispose();
+
                 int writtenSize = 0;
                 Stream s = new FileStream(saveFileDialog.FileName, FileMode.Create);
 
-                ActiveDataFile adf = new ActiveDataFile();
-                adf.magic = Encoding.UTF8.GetBytes("*AD*");
-                TagElement te = (TagElement)metadataNode.Nodes[0].Tag;
-                adf.version = versionToByte((string)te.data);
-                te = (TagElement)metadataNode.Nodes[1].Tag;
-                adf.createTime = ((DateTime)te.data).Ticks;
-                te = (TagElement)metadataNode.Nodes[2].Tag;
-                adf.owner = padStringToByteArray((string)te.data, 64);
+                ActiveDataHeader adh = new ActiveDataHeader();
+                // put magic
+                adh.magic = Encoding.UTF8.GetBytes("*AD*");
+                // put version
+                TagElement te = (TagElement)infoNode.Nodes[0].Tag;
+                adh.version = (byte)te.data;
+                // put creation time
+                te = (TagElement)infoNode.Nodes[1].Tag;
+                adh.createTime = ((DateTime)te.data).Ticks;
+                // pute owner
+                te = (TagElement)infoNode.Nodes[2].Tag;
+                adh.owner = padStringToByteArray((string)te.data, 64);
+                // pute datacount
+                te = (TagElement)infoNode.Nodes[7].Tag;
+                adh.dataCount = Convert.ToInt16((int)te.data);
 
-                adf.metaDataHash = new byte[20].Initialize(0);
-                adf.dataHash = new byte[20].Initialize(0);
-                adf.openCount = 0;
+                // clear hashes and empty fiedls
+                adh.headerHash = new byte[20].Initialize(0);
+                adh.dataHash = new byte[20].Initialize(0);
+                adh.nextHeaderLen = 0;
 
-                adf.counter = new CounterVar[6];
-                adf.datetime = new DateVar[6];
-                int idxC = 0, idxD = 0;
-                foreach(TreeNode n in varNode.Nodes)
-                {
-                    te = (TagElement)n.Tag;
-                    RefData rd = (RefData)te.data;
-                    if (te.type == "VC")
-                    {
-                        adf.counter[idxC] = new CounterVar();
-                        adf.counter[idxC].varName = padStringToByteArray(te.name, 22);
-                        adf.counter[idxC].varGuid = padStringToByteArray(rd.guid);
-                        adf.counter[idxC].refCount = Convert.ToByte(rd.refCount);
-                        adf.counter[idxC].value = Convert.ToInt16((decimal)rd.data);
-                        idxC++;
-                    }
+                // generate a symmetric key
+                var aes = Aes.Create();
+                aes.GenerateKey();
+                adh.symmetricKey = aes.Key;
 
-                    if (te.type == "VD")
-                    {
-                        adf.datetime[idxD] = new DateVar();
-                        adf.datetime[idxD].varName = padStringToByteArray(te.name, 22);
-                        adf.datetime[idxD].varGuid = padStringToByteArray(rd.guid);
-                        adf.datetime[idxD].refCount = Convert.ToByte(rd.refCount);
-                        adf.datetime[idxD].value = ((DateTime)rd.data).Ticks;
-                        idxD++;
-                    }
-                }
+                // convert string publickey into byte array
+                string sExp = publicKey.Substring(0, 4);
+                string sMod = publicKey.Substring(4);
+                //get the object back from the stream
+                var pubKey = new RSAParameters();
+                pubKey.Exponent = Convert.FromBase64String(sExp);
+                pubKey.Modulus = Convert.FromBase64String(sMod);
+                // concatenate Exponent+Modulus
+                byte[] bPubKey = new byte[pubKey.Exponent.Length + pubKey.Modulus.Length];
+                Array.Copy(pubKey.Exponent, bPubKey, pubKey.Exponent.Length);
+                Array.Copy(pubKey.Modulus, 0, bPubKey, pubKey.Exponent.Length, pubKey.Modulus.Length);
 
-                adf.events = new Event[3];
-                int idx = 0;
-                foreach (TreeNode n in eventNode.Nodes)
-                {
-                    te = (TagElement)n.Tag;
-                    Guard g = (Guard)te.data;
+                adh.publicKey = bPubKey;
+                // put end magic                
+                adh.magic2 = Encoding.UTF8.GetBytes("*DFB");
 
-                    adf.events[idx] = new Event();
-                    adf.events[idx].eventName = padStringToByteArray(te.type);
-                    if(g.decreaseQty==0) // dateguard
-                    {
-                        adf.events[idx].decreaseQty = 0;
-                        adf.events[idx].varGuid = padStringToByteArray(g.varDateGuid);
-                    }
-                    else
-                    {
-                        adf.events[idx].decreaseQty = Convert.ToInt16(g.decreaseQty);
-                        adf.events[idx].varGuid = padStringToByteArray(g.varCounterGuid);
-                    }
-                    
-                    idx++;
-                }
+                byte[] headerBuff = ActiveDataHeaderToBytes(adh);
+                s.Write(headerBuff, 0, headerBuff.Length);
+                writtenSize += headerBuff.Length;
 
+                /*
+                                             
                 adf.magic2 = Encoding.UTF8.GetBytes("DF");
                 adf.dataCount = Convert.ToInt16(dataNode.Nodes.Count); 
                 // compute hash of metadata and reinsert it
@@ -720,35 +551,48 @@ namespace adEditor
                 writtenSize += padBuffer.Length;
                 s.Write(dataCombined, 0, dataCombined.Length);
                 writtenSize += dataCombined.Length;
-
+                */
                 s.Close();
                 dirty = false;
 
-                MessageBox.Show("File saved! "+ writtenSize + " bytes written. ("+ headerSizePad +") padding bytes.");
+                MessageBox.Show("File saved! "+ writtenSize + " bytes written.");
                 Text = "adEditor - " + saveFileDialog.FileName;
             }            
         }
        
-        private byte[] ActiveDataFileToBytes(ActiveDataFile adf)
+        private byte[] ActiveDataHeaderToBytes(ActiveDataHeader adh)
         {
-            int length = Marshal.SizeOf(adf);
+            int length = Marshal.SizeOf(adh);
             IntPtr ptr = Marshal.AllocHGlobal(length);
             byte[] myBuffer = new byte[length];
 
-            Marshal.StructureToPtr(adf, ptr, true);
+            Marshal.StructureToPtr(adh, ptr, true);
             Marshal.Copy(ptr, myBuffer, 0, length);
             Marshal.FreeHGlobal(ptr);
 
             return myBuffer;
         }
 
-        private byte[] ActiveDataFieldToBytes(ActiveDataFields adf)
+        private byte[] ActiveDataGuardHeader10ToBytes(ActiveDataGuardHeader10 adgh10)
         {
-            int length = Marshal.SizeOf(adf);
+            int length = Marshal.SizeOf(adgh10);
             IntPtr ptr = Marshal.AllocHGlobal(length);
             byte[] myBuffer = new byte[length];
 
-            Marshal.StructureToPtr(adf, ptr, true);
+            Marshal.StructureToPtr(adgh10, ptr, true);
+            Marshal.Copy(ptr, myBuffer, 0, length);
+            Marshal.FreeHGlobal(ptr);
+
+            return myBuffer;
+        }
+
+        private byte[] ActiveDataBlockToBytes(ActiveDataDataBlock adb)
+        {
+            int length = Marshal.SizeOf(adb);
+            IntPtr ptr = Marshal.AllocHGlobal(length);
+            byte[] myBuffer = new byte[length];
+
+            Marshal.StructureToPtr(adb, ptr, true);
             Marshal.Copy(ptr, myBuffer, 0, length);
             Marshal.FreeHGlobal(ptr);
 
@@ -810,7 +654,7 @@ namespace adEditor
         {
             if(openFileDialog.ShowDialog() == DialogResult.OK)
             {
-                Thread t = new Thread(ServerThread);
+                /*Thread t = new Thread(ServerThread);
                 t.Start();
 
                 Thread.Sleep(5000);
@@ -912,7 +756,7 @@ namespace adEditor
                 treeViewItem.ExpandAll();
 
                 t.Join(250);
-                t = null;
+                t = null;*/
             }
         }
 
@@ -929,7 +773,7 @@ namespace adEditor
         private void setDirty()
         {
             dirty = true;
-            Text = Text + "*";
+            if(!Text.EndsWith("*")) Text = Text + "*";
         }
         private void clearDirty()
         {
@@ -952,7 +796,7 @@ namespace adEditor
         private static void ServerThread(object data)
         {
             NamedPipeServerStream pipeServer =
-                new NamedPipeServerStream("testpipe", PipeDirection.InOut, 1);
+                new NamedPipeServerStream("ad_pipe", PipeDirection.InOut, 1);
 
             // Wait for a client to connect
             pipeServer.WaitForConnection();

@@ -33,6 +33,7 @@ namespace adEditor
             this.nudValue = new System.Windows.Forms.NumericUpDown();
             this.bOk = new System.Windows.Forms.Button();
             this.bCancel = new System.Windows.Forms.Button();
+            this.cbEnabled = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.nudValue)).BeginInit();
             this.SuspendLayout();
             // 
@@ -73,7 +74,7 @@ namespace adEditor
             // bOk
             // 
             this.bOk.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.bOk.Location = new System.Drawing.Point(110, 58);
+            this.bOk.Location = new System.Drawing.Point(115, 99);
             this.bOk.Margin = new System.Windows.Forms.Padding(2);
             this.bOk.Name = "bOk";
             this.bOk.Size = new System.Drawing.Size(81, 32);
@@ -85,7 +86,7 @@ namespace adEditor
             // bCancel
             // 
             this.bCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.bCancel.Location = new System.Drawing.Point(284, 58);
+            this.bCancel.Location = new System.Drawing.Point(289, 99);
             this.bCancel.Margin = new System.Windows.Forms.Padding(2);
             this.bCancel.Name = "bCancel";
             this.bCancel.Size = new System.Drawing.Size(81, 32);
@@ -94,12 +95,24 @@ namespace adEditor
             this.bCancel.UseVisualStyleBackColor = true;
             this.bCancel.Click += new System.EventHandler(this.bCancel_Click);
             // 
+            // cbEnabled
+            // 
+            this.cbEnabled.AutoSize = true;
+            this.cbEnabled.Location = new System.Drawing.Point(140, 58);
+            this.cbEnabled.Name = "cbEnabled";
+            this.cbEnabled.Size = new System.Drawing.Size(146, 17);
+            this.cbEnabled.TabIndex = 6;
+            this.cbEnabled.Text = "Enable counter expiration";
+            this.cbEnabled.UseVisualStyleBackColor = true;
+            this.cbEnabled.CheckedChanged += new System.EventHandler(this.cbEnabled_CheckedChanged);
+            // 
             // CounterForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(462, 113);
+            this.ClientSize = new System.Drawing.Size(462, 158);
             this.ControlBox = false;
+            this.Controls.Add(this.cbEnabled);
             this.Controls.Add(this.bCancel);
             this.Controls.Add(this.bOk);
             this.Controls.Add(this.nudValue);
@@ -120,5 +133,6 @@ namespace adEditor
         private System.Windows.Forms.NumericUpDown nudValue;
         private System.Windows.Forms.Button bOk;
         private System.Windows.Forms.Button bCancel;
+        private System.Windows.Forms.CheckBox cbEnabled;
     }
 }
