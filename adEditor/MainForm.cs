@@ -8,6 +8,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
+using System.IO.Pipes;
+using System.Threading;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
@@ -41,12 +43,12 @@ namespace adEditor
 
             treeViewItem.Nodes.Clear();
 
-            TreeNode root = new TreeNode("ActiveData");
+            /*TreeNode root = new TreeNode("ActiveData");
             root.Tag = new TagElement("-");
-            TreeNode metaData = new TreeNode("Meta-Data");
-            metaData.ImageIndex = 0;
-            metaData.Tag = new TagElement("-");
-            metadataNode = metaData;
+            TreeNode info = new TreeNode("Information");
+            info.ImageIndex = 0;
+            info.Tag = new TagElement("-");
+            infoNode = info;
 
             TreeNode n = new TreeNode("Version: 1.0");
             n.ImageIndex = n.SelectedImageIndex = 3;
@@ -94,7 +96,7 @@ namespace adEditor
             root.Nodes.Add(data);
             dataNode = data;
 
-            treeViewItem.Nodes.Add(root);
+            treeViewItem.Nodes.Add(root);*/
             treeViewItem.ExpandAll();
 
             clearDirty();
@@ -808,6 +810,11 @@ namespace adEditor
         {
             if(openFileDialog.ShowDialog() == DialogResult.OK)
             {
+                Thread t = new Thread(ServerThread);
+                t.Start();
+
+                Thread.Sleep(5000);
+
                 byte[] bytes = System.IO.File.ReadAllBytes(openFileDialog.FileName);
                 MessageBox.Show("Read all file, bytes: " + bytes.Length);
                 Text = "adEditor - " + openFileDialog.FileName;
@@ -903,6 +910,9 @@ namespace adEditor
                 root.Nodes.Add(data);
                 treeViewItem.Nodes.Add(root);
                 treeViewItem.ExpandAll();
+
+                t.Join(250);
+                t = null;
             }
         }
 
@@ -937,6 +947,88 @@ namespace adEditor
                 s2 += c;
             }
             return s2;
+        }
+
+        private static void ServerThread(object data)
+        {
+            NamedPipeServerStream pipeServer =
+                new NamedPipeServerStream("testpipe", PipeDirection.InOut, 1);
+
+            // Wait for a client to connect
+            pipeServer.WaitForConnection();
+
+            try
+            {
+                // Read the request from the client. Once the client has
+                // written to the pipe its security token will be available.
+
+                StreamString ss = new StreamString(pipeServer);
+
+                // Verify our identity to the connected client using a
+                // string that the client anticipates.
+
+                ss.WriteString("HLO!");
+                string filename = ss.ReadString();
+
+                KeyForm kf = new KeyForm(filename);
+                if(kf.ShowDialog()==DialogResult.OK)
+                {
+                    string pvtKey = (string)kf.Tag;
+                    ss.WriteString(pvtKey);
+                }
+                else
+                {
+                    ss.WriteString("");
+                }
+                kf.Dispose();
+            }
+            catch (IOException e)
+            {
+                Console.WriteLine("ERROR: {0}", e.Message);
+            }
+            pipeServer.Close();
+            pipeServer.Dispose();
+        }
+    }
+
+    // Defines the data protocol for reading and writing strings on our stream
+    public class StreamString
+    {
+        private Stream ioStream;
+        private UnicodeEncoding streamEncoding;
+
+        public StreamString(Stream ioStream)
+        {
+            this.ioStream = ioStream;
+            streamEncoding = new UnicodeEncoding();
+        }
+
+        public string ReadString()
+        {
+            int len = 0;
+
+            len = ioStream.ReadByte() * 256;
+            len += ioStream.ReadByte();
+            byte[] inBuffer = new byte[len];
+            ioStream.Read(inBuffer, 0, len);
+
+            return streamEncoding.GetString(inBuffer);
+        }
+
+        public int WriteString(string outString)
+        {
+            byte[] outBuffer = streamEncoding.GetBytes(outString);
+            int len = outBuffer.Length;
+            if (len > UInt16.MaxValue)
+            {
+                len = (int)UInt16.MaxValue;
+            }
+            ioStream.WriteByte((byte)(len / 256));
+            ioStream.WriteByte((byte)(len & 255));
+            ioStream.Write(outBuffer, 0, len);
+            ioStream.Flush();
+
+            return outBuffer.Length + 2;
         }
     }
 }
