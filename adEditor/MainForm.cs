@@ -22,7 +22,9 @@ namespace adEditor
         private TreeNode openCountNode = null;
         private TreeNode dataFieldCountNode = null;
         private bool dirty;
+        private static string privateKey;
         private SHA1Managed sha1 = new SHA1Managed();
+        private readonly byte[] iv = new byte[16] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
         public MainForm()
         {
@@ -461,10 +463,10 @@ namespace adEditor
                 // put creation time
                 te = (TagElement)infoNode.Nodes[1].Tag;
                 adh.createTime = ((DateTime)te.data).Ticks;
-                // pute owner
+                // put owner
                 te = (TagElement)infoNode.Nodes[2].Tag;
                 adh.owner = padStringToByteArray((string)te.data, 64);
-                // pute datacount
+                // put datacount
                 te = (TagElement)infoNode.Nodes[7].Tag;
                 adh.dataCount = Convert.ToInt16((int)te.data);
 
@@ -472,12 +474,7 @@ namespace adEditor
                 adh.headerHash = new byte[20].Initialize(0);
                 adh.dataHash = new byte[20].Initialize(0);
                 adh.nextHeaderLen = 0;
-
-                // generate a symmetric key
-                var aes = Aes.Create();
-                aes.GenerateKey();
-                adh.symmetricKey = aes.Key;
-
+                
                 // convert string publickey into byte array
                 string sExp = publicKey.Substring(0, 4);
                 string sMod = publicKey.Substring(4);
@@ -486,72 +483,70 @@ namespace adEditor
                 pubKey.Exponent = Convert.FromBase64String(sExp);
                 pubKey.Modulus = Convert.FromBase64String(sMod);
                 // concatenate Exponent+Modulus
-                byte[] bPubKey = new byte[pubKey.Exponent.Length + pubKey.Modulus.Length];
-                Array.Copy(pubKey.Exponent, bPubKey, pubKey.Exponent.Length);
-                Array.Copy(pubKey.Modulus, 0, bPubKey, pubKey.Exponent.Length, pubKey.Modulus.Length);
-
+                byte[] bPubKey = Combine(pubKey.Exponent, pubKey.Modulus);                
                 adh.publicKey = bPubKey;
+
+                // Perform encryption
+                var csp = new RSACryptoServiceProvider(2048);
+                csp.ImportParameters(pubKey);
+
+                // generate a symmetric key and encrypt with public key
+                var aes = Aes.Create();
+                aes.GenerateKey();
+                adh.symmetricKey = csp.Encrypt(aes.Key, false);;
+
                 // put end magic                
-                adh.magic2 = Encoding.UTF8.GetBytes("*DFB");
+                adh.magic2 = Encoding.UTF8.GetBytes("DFB");
+                
+                // Actually there is no EXTRA HEADER, so go directly to GUARDHEADER
 
-                byte[] headerBuff = ActiveDataHeaderToBytes(adh);
-                s.Write(headerBuff, 0, headerBuff.Length);
-                writtenSize += headerBuff.Length;
+                ActiveDataGuardHeader10 adgh10 = new ActiveDataGuardHeader10();
+                adgh10.magic = Encoding.UTF8.GetBytes("GD10");
+                adgh10.openCount = 0;
+                te = (TagElement)infoNode.Nodes[4].Tag;
+                adgh10.counter = (int)te.data;
+                te = (TagElement)infoNode.Nodes[5].Tag;
+                adgh10.expireDate = (te.data!=null) ? (long)te.data : 0L;
+                te = (TagElement)infoNode.Nodes[6].Tag;
+                adgh10.flags = (bool)te.data ? (short)1 : (short)0;
 
-                /*
-                                             
-                adf.magic2 = Encoding.UTF8.GetBytes("DF");
-                adf.dataCount = Convert.ToInt16(dataNode.Nodes.Count); 
-                // compute hash of metadata and reinsert it
-                adf.metaDataHash = sha1.ComputeHash(ActiveDataFileToBytes(adf));
-                // compute for length
-                byte[] headerBuff = ActiveDataFileToBytes(adf);
+                byte[] guardHeaderBuff = ActiveDataGuardHeader10ToBytes(adgh10);
 
-                // pad fill                
-                int headerSizePad = 2048 - headerBuff.Length;
-                byte[] padBuffer = new byte[headerSizePad].Initialize(0);
-
-                // compute data fields size
-                byte[][] dataBuffer = new byte[dataNode.Nodes.Count*2][];
-                int i = 0;
-                foreach(TreeNode n in dataNode.Nodes)
+                // combine data nodes
+                byte[] dataBuffer = new byte[0];
+                foreach (TreeNode n in dataNode.Nodes)
                 {
                     te = (TagElement)n.Tag;
 
                     byte[] data = (byte[])te.data;
-                    ActiveDataFields adfld = new ActiveDataFields();
-                    adfld.fieldName = padStringToByteArray(te.name, 32);
-                    adfld.extension = padStringToByteArray(te.extension+"|"+te.type, 32);
-                    adfld.fieldSize = (uint)data.Length;
+                    ActiveDataDataBlock addb = new ActiveDataDataBlock();
+                    addb.name = padStringToByteArray(te.name, 32);
+                    addb.extension = padStringToByteArray(te.extension, 24);
+                    addb.type = padStringToByteArray(te.type, 2);
+                    addb.flag = Convert.ToInt16(te.flag);
+                    addb.dataLen = (uint)data.Length;
 
-                    // compute size of buffer
-                    dataBuffer[i] = ActiveDataFieldToBytes(adfld);
-                    dataBuffer[i + 1] = data;
-                    i+=2;
+                    dataBuffer = Combine(dataBuffer, ActiveDataBlockToBytes(addb), data);
                 }
 
-                // combine array
-                byte[] dataCombined = new byte[dataBuffer.Sum(a => a.Length)];
-                int offset = 0;
-                foreach (byte[] array in dataBuffer)
-                {
-                    System.Buffer.BlockCopy(array, 0, dataCombined, offset, array.Length);
-                    offset += array.Length;
-                }
+                // combine buffers and compute hash
+                byte[] headersBuff = Combine(ActiveDataHeaderToBytes(adh), guardHeaderBuff);
+                adh.headerHash = sha1.ComputeHash(headersBuff);
+                adh.dataHash = sha1.ComputeHash(dataBuffer);
+                // regenerate byte arrays of header
+                byte[] headerBuff = ActiveDataHeaderToBytes(adh);
 
-                // update header data hash
-                adf.dataHash = sha1.ComputeHash(dataCombined);
-                // regenerate new buffer
-                headerBuff = ActiveDataFileToBytes(adf);
+                // Encrypt with symmetric key the guard block and data bloc
+                var crypto = new AesCryptographyService();
+                guardHeaderBuff = crypto.Encrypt(guardHeaderBuff, aes.Key, iv);
+                dataBuffer = crypto.Encrypt(dataBuffer, aes.Key, iv);
 
-                // Write down the sequence of buffers to file
+                // save all
                 s.Write(headerBuff, 0, headerBuff.Length);
-                writtenSize += headerBuff.Length;
-                s.Write(padBuffer, 0, padBuffer.Length);
-                writtenSize += padBuffer.Length;
-                s.Write(dataCombined, 0, dataCombined.Length);
-                writtenSize += dataCombined.Length;
-                */
+                s.Write(guardHeaderBuff, 0, guardHeaderBuff.Length);
+                s.Write(dataBuffer, 0, dataBuffer.Length);
+                writtenSize += headerBuff.Length + guardHeaderBuff.Length + dataBuffer.Length;
+                
                 s.Close();
                 dirty = false;
 
@@ -653,55 +648,109 @@ namespace adEditor
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if(openFileDialog.ShowDialog() == DialogResult.OK)
-            {
-                /*Thread t = new Thread(ServerThread);
-                t.Start();
+            {                
+                KeyForm kf = new KeyForm(openFileDialog.FileName, "private");
+                if (kf.ShowDialog() == DialogResult.OK)
+                {
+                    privateKey = (string)kf.Tag;
+                    kf.Dispose();
+                }
+                else
+                {
+                    kf.Dispose();
+                    MessageBox.Show("Operation aborted.");
+                    return;
+                }
 
-                Thread.Sleep(5000);
+                //Thread t = new Thread(ServerThread);
+                //t.Start();
+
+                //Thread.Sleep(5000);
 
                 byte[] bytes = System.IO.File.ReadAllBytes(openFileDialog.FileName);
+
+                //t.Join(250);
+                //t = null;
+
                 MessageBox.Show("Read all file, bytes: " + bytes.Length);
                 Text = "adEditor - " + openFileDialog.FileName;
 
-                int BufferSize = Marshal.SizeOf(typeof(ActiveDataFile));
-                byte[] buff = new byte[BufferSize];
-                Array.Copy(bytes, 0, buff, 0, BufferSize);
+                byte[] buff = new byte[Marshal.SizeOf(typeof(ActiveDataHeader))];
+                Array.Copy(bytes, 0, buff, 0, buff.Length);
                 GCHandle handle = GCHandle.Alloc(buff, GCHandleType.Pinned);
-
-                ActiveDataFile adf = (ActiveDataFile)Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(ActiveDataFile));
-
+                ActiveDataHeader adh = (ActiveDataHeader)Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(ActiveDataHeader));
                 handle.Free();
 
+                // check magic
+                if (!string.Equals(Encoding.UTF8.GetString(adh.magic), "*AD*") && !string.Equals(Encoding.UTF8.GetString( adh.magic2), "DFB"))
+                {
+                    MessageBox.Show("File is corrupted or is not an ActiveData file", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);                    
+                    return;
+                }
+
+                // check version, actualli ony 1.0 can be handled
+                if(adh.version!=0x10) {
+                    MessageBox.Show("File is a newer format and cannot be handled with this editor. Please update.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                
+                // fill the tree
                 treeViewItem.Nodes.Clear();
 
                 TreeNode root = new TreeNode("ActiveData");
                 root.Tag = new TagElement("-");
-                TreeNode metaData = new TreeNode("Meta-Data");
-                metaData.ImageIndex = 0;
-                metaData.Tag = new TagElement("-");
+                TreeNode info = new TreeNode("Information");
+                info.ImageIndex = 0;
+                info.Tag = new TagElement("-");
 
-                String ver = ((adf.version & 0xF0) >> 4) + "." + (adf.version & 0x0F);
+                string ver = ((adh.version & 0xF0) >> 4) + "." + (adh.version & 0x0F);
                 TreeNode n = new TreeNode("Version: " + ver);
                 n.ImageIndex = n.SelectedImageIndex = 3;
-                n.Tag = new TagElement("S", "Version", 0, ver);
-                metaData.Nodes.Add(n);
+                n.Tag = new TagElement("-", "Version", 0, ver);
+                info.Nodes.Add(n);
 
-                DateTime dt = new DateTime(adf.createTime);
+                DateTime dt = new DateTime(adh.createTime);
                 string c = dt.ToString("dd-MM-yyyy HH:mm:ss");
                 n = new TreeNode("Created: " + c);
-                n.Tag = new TagElement("D", "Created", 0, dt);
-                metaData.Nodes.Add(n);
+                n.Tag = new TagElement("-", "Created", 0, dt);
+                info.Nodes.Add(n);
 
-                c = Encoding.UTF8.GetString(adf.owner);
+                c = Encoding.UTF8.GetString(adh.owner);
                 n = new TreeNode("Owner: " + c);
-                n.Tag = new TagElement("S", "Owner", 64, c);
-                metaData.Nodes.Add(n);
-
-                n = new TreeNode("Open count: " + adf.openCount);
-                n.Tag = new TagElement("-", "OpenCount", 0, adf.openCount);
-                metaData.Nodes.Add(n);
-                openCountNode = n;
+                n.Tag = new TagElement("-", "Owner", 64, c);
+                info.Nodes.Add(n);
                 
+                n = new TreeNode("Data field #: " + adh.dataCount);
+                n.Tag = new TagElement("-", "Owner", 0, adh.dataCount);
+                info.Nodes.Add(n);
+
+                // Read GuardBlock
+                int prevBuffersize = buff.Length;
+                buff = new byte[Marshal.SizeOf(typeof(ActiveDataGuardHeader10))];
+                Array.Copy(bytes, prevBuffersize, buff, 0, buff.Length);
+                handle = GCHandle.Alloc(buff, GCHandleType.Pinned);
+                ActiveDataGuardHeader10 adgh10 = (ActiveDataGuardHeader10)Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(ActiveDataGuardHeader10));
+                handle.Free();
+
+                var csp = new RSACryptoServiceProvider(2048);
+                var pvtKey = new RSAParameters();
+                pvtKey.Exponent = Convert.FromBase64String(privateKey.Substring(0, 4));
+                pvtKey.Modulus = Convert.FromBase64String(privateKey.Substring(4));
+
+                // generate a symmetric key and encrypt with public key
+                var aes = Aes.Create();
+                aes.GenerateKey();
+                adh.symmetricKey = csp.Encrypt(aes.Key, false); ;
+                byte[] prvKey = Convert.FromBase64String(privateKey);
+                RSAParameters privateK = new RSAParameters();
+                Array.Copy(prvKey, 0, privateK.D, 0, 256);
+                Array.Copy(prvKey, privateK.D.Length, privateK.Modulus, 0, 256);
+                Array.Copy(prvKey, privateK.D.Length+privateK.Modulus.Length, privateK.DP, 0, 128);
+                Array.Copy(prvKey, privateK.D.Length + privateK.Modulus.Length+privateK.DP.Length, privateK.DQ, 0, 128);               
+                Array.Copy(prvKey, privateK.D.Length + privateK.Modulus.Length + privateK.DP.Length+privateK.DQ.Length, privateK.P, 0, 128);
+                Array.Copy(prvKey, privateK.D.Length + privateK.Modulus.Length + privateK.DP.Length+privateK.DQ.Length+privateK.P.Length, privateK.Q, 0, 128);
+
+                /*
                 TreeNode data = new TreeNode("Data");
                 data.Tag = new TagElement("D");
                 data.ImageIndex = data.SelectedImageIndex = 1;
@@ -749,14 +798,14 @@ namespace adEditor
 
                     dataSize = dataSize + BufferSize + adFld.fieldSize;
                 }
-
-                root.Nodes.Add(metaData);
-                root.Nodes.Add(data);
+                */
+                root.Nodes.Add(info);
+                //root.Nodes.Add(data);
                 treeViewItem.Nodes.Add(root);
                 treeViewItem.ExpandAll();
-
-                t.Join(250);
-                t = null;*/
+                
+                
+                
             }
         }
 
@@ -793,6 +842,18 @@ namespace adEditor
             return s2;
         }
 
+        private byte[] Combine(params byte[][] arrays)
+        {
+            byte[] rv = new byte[arrays.Sum(a => a.Length)];
+            int offset = 0;
+            foreach (byte[] array in arrays)
+            {
+                System.Buffer.BlockCopy(array, 0, rv, offset, array.Length);
+                offset += array.Length;
+            }
+            return rv;
+        }
+
         private static void ServerThread(object data)
         {
             NamedPipeServerStream pipeServer =
@@ -813,18 +874,7 @@ namespace adEditor
 
                 ss.WriteString("HLO!");
                 string filename = ss.ReadString();
-
-                KeyForm kf = new KeyForm(filename);
-                if(kf.ShowDialog()==DialogResult.OK)
-                {
-                    string pvtKey = (string)kf.Tag;
-                    ss.WriteString(pvtKey);
-                }
-                else
-                {
-                    ss.WriteString("");
-                }
-                kf.Dispose();
+                ss.WriteString(privateKey);                
             }
             catch (IOException e)
             {
@@ -873,6 +923,57 @@ namespace adEditor
             ioStream.Flush();
 
             return outBuffer.Length + 2;
+        }
+    }
+
+    public class AesCryptographyService
+    {
+        public byte[] Encrypt(byte[] data, byte[] key, byte[] iv)
+        {
+            using (var aes = Aes.Create())
+            {
+                aes.KeySize = 128;
+                aes.BlockSize = 128;
+                aes.Padding = PaddingMode.PKCS7;
+
+                aes.Key = key;
+                aes.IV = iv;
+
+                using (var encryptor = aes.CreateEncryptor(aes.Key, aes.IV))
+                {
+                    return PerformCryptography(data, encryptor);
+                }
+            }
+        }
+
+        public byte[] Decrypt(byte[] data, byte[] key, byte[] iv)
+        {
+            using (var aes = Aes.Create())
+            {
+                aes.KeySize = 128;
+                aes.BlockSize = 128;
+                aes.Padding = PaddingMode.PKCS7;
+
+                aes.Key = key;
+                aes.IV = iv;
+
+                using (var decryptor = aes.CreateDecryptor(aes.Key, aes.IV))
+                {
+                    return PerformCryptography(data, decryptor);
+                }
+            }
+        }
+
+        private byte[] PerformCryptography(byte[] data, ICryptoTransform cryptoTransform)
+        {
+            using (var ms = new MemoryStream())
+            using (var cryptoStream = new CryptoStream(ms, cryptoTransform, CryptoStreamMode.Write))
+            {
+                cryptoStream.Write(data, 0, data.Length);
+                cryptoStream.FlushFinalBlock();
+
+                return ms.ToArray();
+            }
         }
     }
 }

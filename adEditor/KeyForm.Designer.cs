@@ -29,22 +29,25 @@ namespace adEditor
         /// </summary>
         private void InitializeComponent()
         {
-            this.tbPrvtKey = new System.Windows.Forms.TextBox();
+            this.tbKey = new System.Windows.Forms.TextBox();
             this.bOk = new System.Windows.Forms.Button();
             this.bCancel = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
-            // tbPrvtKey
+            // tbKey
             // 
-            this.tbPrvtKey.Location = new System.Drawing.Point(22, 23);
-            this.tbPrvtKey.Name = "tbPrvtKey";
-            this.tbPrvtKey.Size = new System.Drawing.Size(465, 20);
-            this.tbPrvtKey.TabIndex = 0;
+            this.tbKey.Location = new System.Drawing.Point(22, 23);
+            this.tbKey.MaxLength = 348;
+            this.tbKey.Multiline = true;
+            this.tbKey.Name = "tbKey";
+            this.tbKey.Size = new System.Drawing.Size(465, 59);
+            this.tbKey.TabIndex = 0;
+            this.tbKey.TextChanged += new System.EventHandler(this.tbKey_TextChanged);
             // 
             // bOk
             // 
             this.bOk.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.bOk.Location = new System.Drawing.Point(64, 63);
+            this.bOk.Location = new System.Drawing.Point(71, 108);
             this.bOk.Name = "bOk";
             this.bOk.Size = new System.Drawing.Size(75, 23);
             this.bOk.TabIndex = 1;
@@ -55,7 +58,7 @@ namespace adEditor
             // bCancel
             // 
             this.bCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.bCancel.Location = new System.Drawing.Point(352, 63);
+            this.bCancel.Location = new System.Drawing.Point(359, 108);
             this.bCancel.Name = "bCancel";
             this.bCancel.Size = new System.Drawing.Size(75, 23);
             this.bCancel.TabIndex = 2;
@@ -67,10 +70,11 @@ namespace adEditor
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(509, 112);
+            this.ClientSize = new System.Drawing.Size(509, 156);
+            this.ControlBox = false;
             this.Controls.Add(this.bCancel);
             this.Controls.Add(this.bOk);
-            this.Controls.Add(this.tbPrvtKey);
+            this.Controls.Add(this.tbKey);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.Name = "KeyForm";
             this.Text = "Enter your private key";
@@ -81,7 +85,7 @@ namespace adEditor
 
         #endregion
 
-        private System.Windows.Forms.TextBox tbPrvtKey;
+        private System.Windows.Forms.TextBox tbKey;
         private System.Windows.Forms.Button bOk;
         private System.Windows.Forms.Button bCancel;
     }
