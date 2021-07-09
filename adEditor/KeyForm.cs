@@ -19,7 +19,7 @@ namespace adEditor
             Text = "Enter your " + type + " key for file " + fname;
             if(type.ToUpper().Equals("PRIVATE"))
             {
-                tbKey.MaxLength = 1368;
+                tbKey.MaxLength = 1540;
             }
             else
             {

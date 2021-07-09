@@ -23,6 +23,7 @@ namespace adEditor
         private TreeNode dataFieldCountNode = null;
         private bool dirty;
         private static string privateKey;
+        private static string pipeResult;
         private SHA1Managed sha1 = new SHA1Managed();
         private readonly byte[] iv = new byte[16] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
@@ -451,8 +452,28 @@ namespace adEditor
                 string publicKey = (string)pbf.Tag;
                 pbf.Dispose();
 
+                // convert string publickey into byte array
+                string sExp = publicKey.Substring(0, 4);
+                string sMod = publicKey.Substring(4);
+                //get the object back from the stream
+                var pubKey = new RSAParameters();
+                pubKey.Exponent = Convert.FromBase64String(sExp);
+                pubKey.Modulus = Convert.FromBase64String(sMod);
+                // concatenate Exponent+Modulus
+                byte[] bPubKey = Combine(pubKey.Exponent, pubKey.Modulus);
+
                 int writtenSize = 0;
                 Stream s = new FileStream(saveFileDialog.FileName, FileMode.Create);
+                                                
+                // Encrypt with symmetric key the guard block and data bloc
+                // Perform encryption
+                var csp = new RSACryptoServiceProvider(2048);
+                csp.ImportParameters(pubKey);
+
+                // generate a symmetric key and encrypt with public key
+                var aes = Aes.Create();
+                aes.GenerateKey();
+                var crypto = new AesCryptographyService();                                
 
                 ActiveDataHeader adh = new ActiveDataHeader();
                 // put magic
@@ -469,31 +490,13 @@ namespace adEditor
                 // put datacount
                 te = (TagElement)infoNode.Nodes[7].Tag;
                 adh.dataCount = Convert.ToInt16((int)te.data);
-
+                
                 // clear hashes and empty fiedls
                 adh.headerHash = new byte[20].Initialize(0);
-                adh.dataHash = new byte[20].Initialize(0);
                 adh.nextHeaderLen = 0;
-                
-                // convert string publickey into byte array
-                string sExp = publicKey.Substring(0, 4);
-                string sMod = publicKey.Substring(4);
-                //get the object back from the stream
-                var pubKey = new RSAParameters();
-                pubKey.Exponent = Convert.FromBase64String(sExp);
-                pubKey.Modulus = Convert.FromBase64String(sMod);
-                // concatenate Exponent+Modulus
-                byte[] bPubKey = Combine(pubKey.Exponent, pubKey.Modulus);                
+
                 adh.publicKey = bPubKey;
-
-                // Perform encryption
-                var csp = new RSACryptoServiceProvider(2048);
-                csp.ImportParameters(pubKey);
-
-                // generate a symmetric key and encrypt with public key
-                var aes = Aes.Create();
-                aes.GenerateKey();
-                adh.symmetricKey = csp.Encrypt(aes.Key, false);;
+                adh.symmetricKey = csp.Encrypt(aes.Key, false);
 
                 // put end magic                
                 adh.magic2 = Encoding.UTF8.GetBytes("DFB");
@@ -506,47 +509,49 @@ namespace adEditor
                 te = (TagElement)infoNode.Nodes[4].Tag;
                 adgh10.counter = (int)te.data;
                 te = (TagElement)infoNode.Nodes[5].Tag;
-                adgh10.expireDate = (te.data!=null) ? (long)te.data : 0L;
+                adgh10.expireDate = (te.data!=null) ? ((DateTime)te.data).Ticks : 0L;
                 te = (TagElement)infoNode.Nodes[6].Tag;
                 adgh10.flags = (bool)te.data ? (short)1 : (short)0;
 
                 byte[] guardHeaderBuff = ActiveDataGuardHeader10ToBytes(adgh10);
-
-                // combine data nodes
-                byte[] dataBuffer = new byte[0];
-                foreach (TreeNode n in dataNode.Nodes)
-                {
-                    te = (TagElement)n.Tag;
-
-                    byte[] data = (byte[])te.data;
-                    ActiveDataDataBlock addb = new ActiveDataDataBlock();
-                    addb.name = padStringToByteArray(te.name, 32);
-                    addb.extension = padStringToByteArray(te.extension, 24);
-                    addb.type = padStringToByteArray(te.type, 2);
-                    addb.flag = Convert.ToInt16(te.flag);
-                    addb.dataLen = (uint)data.Length;
-
-                    dataBuffer = Combine(dataBuffer, ActiveDataBlockToBytes(addb), data);
-                }
-
+                
                 // combine buffers and compute hash
                 byte[] headersBuff = Combine(ActiveDataHeaderToBytes(adh), guardHeaderBuff);
                 adh.headerHash = sha1.ComputeHash(headersBuff);
-                adh.dataHash = sha1.ComputeHash(dataBuffer);
                 // regenerate byte arrays of header
                 byte[] headerBuff = ActiveDataHeaderToBytes(adh);
 
-                // Encrypt with symmetric key the guard block and data bloc
-                var crypto = new AesCryptographyService();
                 guardHeaderBuff = crypto.Encrypt(guardHeaderBuff, aes.Key, iv);
-                dataBuffer = crypto.Encrypt(dataBuffer, aes.Key, iv);
 
                 // save all
                 s.Write(headerBuff, 0, headerBuff.Length);
                 s.Write(guardHeaderBuff, 0, guardHeaderBuff.Length);
-                s.Write(dataBuffer, 0, dataBuffer.Length);
-                writtenSize += headerBuff.Length + guardHeaderBuff.Length + dataBuffer.Length;
-                
+
+                // combine data nodes and save
+                writtenSize += headerBuff.Length + guardHeaderBuff.Length;
+                foreach (TreeNode n in dataNode.Nodes)
+                {
+                    TagElement _te = (TagElement)n.Tag;
+
+                    byte[] data = crypto.Encrypt((byte[])_te.data, aes.Key, iv);
+                    ActiveDataDataBlock addb = new ActiveDataDataBlock();
+                    addb.name = padStringToByteArray(_te.name, 32);
+                    addb.extension = padStringToByteArray(_te.extension, 24);
+                    addb.type = padStringToByteArray(_te.type, 2);
+                    addb.flag = Convert.ToInt16(_te.flag);
+                    addb.dataHash = new byte[20].Initialize(0);
+                    addb.dataLen = (uint)data.Length;
+
+                    byte[] addbBuf = ActiveDataBlockToBytes(addb);
+                    byte[] dataBuffer = Combine(addbBuf, data);
+                    addb.dataHash = sha1.ComputeHash(headersBuff);
+
+                    addbBuf = ActiveDataBlockToBytes(addb);
+                    dataBuffer = Combine(addbBuf, data);
+                    s.Write(dataBuffer, 0, dataBuffer.Length);
+                    writtenSize += dataBuffer.Length;
+                }
+                                                
                 s.Close();
                 dirty = false;
 
@@ -648,8 +653,8 @@ namespace adEditor
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if(openFileDialog.ShowDialog() == DialogResult.OK)
-            {                
-                KeyForm kf = new KeyForm(openFileDialog.FileName, "private");
+            {
+                /*KeyForm kf = new KeyForm(openFileDialog.FileName, "private");
                 if (kf.ShowDialog() == DialogResult.OK)
                 {
                     privateKey = (string)kf.Tag;
@@ -660,22 +665,39 @@ namespace adEditor
                     kf.Dispose();
                     MessageBox.Show("Operation aborted.");
                     return;
+                }*/
+                
+                Thread t = new Thread(ServerThread);
+                t.Start();                
+                t.Join(500);
+                t = null;
+
+                byte[] bytes;
+                try
+                {
+                    bytes = System.IO.File.ReadAllBytes(openFileDialog.FileName);
                 }
-
-                //Thread t = new Thread(ServerThread);
-                //t.Start();
-
-                //Thread.Sleep(5000);
-
-                byte[] bytes = System.IO.File.ReadAllBytes(openFileDialog.FileName);
-
-                //t.Join(250);
-                //t = null;
-
+                catch (Exception ex)
+                {
+                    if (string.Equals(pipeResult, "DATE_EXPIRED"))
+                    {
+                        MessageBox.Show("You're trying to open the file past the allowed date. Sorry.", "Halt!", MessageBoxButtons.OK, MessageBoxIcon.Stop);
+                        return;
+                    }
+                    if (string.Equals(pipeResult, "COUNTER_EXPIRED"))
+                    {
+                        MessageBox.Show("Maximum number of opening reached. Sorry.", "Halt!", MessageBoxButtons.OK, MessageBoxIcon.Stop);
+                        return;
+                    }
+                    MessageBox.Show("Cannot read the file, there were some problem.", "Halt!", MessageBoxButtons.OK, MessageBoxIcon.Stop);
+                    return;
+                }
+                
                 MessageBox.Show("Read all file, bytes: " + bytes.Length);
                 Text = "adEditor - " + openFileDialog.FileName;
 
                 byte[] buff = new byte[Marshal.SizeOf(typeof(ActiveDataHeader))];
+                int mainHeadeLen = buff.Length;
                 Array.Copy(bytes, 0, buff, 0, buff.Length);
                 GCHandle handle = GCHandle.Alloc(buff, GCHandleType.Pinned);
                 ActiveDataHeader adh = (ActiveDataHeader)Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(ActiveDataHeader));
@@ -724,88 +746,94 @@ namespace adEditor
                 n.Tag = new TagElement("-", "Owner", 0, adh.dataCount);
                 info.Nodes.Add(n);
 
+                // Create crypto objects
+                var csp = new RSACryptoServiceProvider(2048);
+                var crypto = new AesCryptographyService();
+                var privateK = new RSAParameters();
+
+                byte[] prvKey = Convert.FromBase64String(privateKey);
+                privateK.Exponent = Extract(prvKey, 0, 3);
+                privateK.Modulus = Extract(prvKey, 3, 256);
+                privateK.D = Extract(prvKey, 259, 256);                
+                privateK.DP = Extract(prvKey, 515, 128);
+                privateK.DQ = Extract(prvKey, 643, 128);
+                privateK.P = Extract(prvKey, 771, 128);
+                privateK.Q = Extract(prvKey, 899, 128);
+                privateK.InverseQ = Extract(prvKey, 1027, 128);
+
+                // Dectype symmetri key
+                csp.ImportParameters(privateK);
+                byte[] symmetricKey = csp.Decrypt(adh.symmetricKey, false);
+
                 // Read GuardBlock
                 int prevBuffersize = buff.Length;
-                buff = new byte[Marshal.SizeOf(typeof(ActiveDataGuardHeader10))];
+                // The buffer for GuardBlock is 22 bytes + PCSK#17 padding to 32 bytes
+                buff = new byte[32];
                 Array.Copy(bytes, prevBuffersize, buff, 0, buff.Length);
-                handle = GCHandle.Alloc(buff, GCHandleType.Pinned);
+                // decrypt buffer
+                buff = crypto.Decrypt(buff, symmetricKey, iv);
+
+                // convert it back to struct
+                handle = GCHandle.Alloc(buff, GCHandleType.Pinned);                                
                 ActiveDataGuardHeader10 adgh10 = (ActiveDataGuardHeader10)Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(ActiveDataGuardHeader10));
                 handle.Free();
 
-                var csp = new RSACryptoServiceProvider(2048);
-                var pvtKey = new RSAParameters();
-                pvtKey.Exponent = Convert.FromBase64String(privateKey.Substring(0, 4));
-                pvtKey.Modulus = Convert.FromBase64String(privateKey.Substring(4));
-
-                // generate a symmetric key and encrypt with public key
-                var aes = Aes.Create();
-                aes.GenerateKey();
-                adh.symmetricKey = csp.Encrypt(aes.Key, false); ;
-                byte[] prvKey = Convert.FromBase64String(privateKey);
-                RSAParameters privateK = new RSAParameters();
-                Array.Copy(prvKey, 0, privateK.D, 0, 256);
-                Array.Copy(prvKey, privateK.D.Length, privateK.Modulus, 0, 256);
-                Array.Copy(prvKey, privateK.D.Length+privateK.Modulus.Length, privateK.DP, 0, 128);
-                Array.Copy(prvKey, privateK.D.Length + privateK.Modulus.Length+privateK.DP.Length, privateK.DQ, 0, 128);               
-                Array.Copy(prvKey, privateK.D.Length + privateK.Modulus.Length + privateK.DP.Length+privateK.DQ.Length, privateK.P, 0, 128);
-                Array.Copy(prvKey, privateK.D.Length + privateK.Modulus.Length + privateK.DP.Length+privateK.DQ.Length+privateK.P.Length, privateK.Q, 0, 128);
-
-                /*
-                TreeNode data = new TreeNode("Data");
-                data.Tag = new TagElement("D");
-                data.ImageIndex = data.SelectedImageIndex = 1;
-
-                byte[] mdHash = new byte[20];
-                byte[] dHash = new byte[20];
-                for (int i = 0; i < 20; ++i)
+                if(!string.Equals(Encoding.UTF8.GetString(adgh10.magic), "GD10"))
                 {
-                    mdHash[i] = adf.metaDataHash[i];
-                    dHash[i] = adf.dataHash[i];
-                    adf.metaDataHash[i] = 0;
-                    adf.dataHash[i] = 0;
-                }
-                adf.metaDataHash = sha1.ComputeHash(ActiveDataFileToBytes(adf));
-                if(!equalHash(adf.metaDataHash, mdHash))
-                {
-                    MessageBox.Show("The file is corrupted.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    treeViewItem.Nodes.Clear();
+                    MessageBox.Show("Some headers are corrupted.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
-                long dataSize = 0;
-                for(int i=0;i<adf.dataCount;i++)
-                {
-                    BufferSize = Marshal.SizeOf(typeof(ActiveDataFields));
-                    buff = new byte[BufferSize];
-                    Array.Copy(bytes, 2048+dataSize, buff, 0, BufferSize);
+                n = new TreeNode("Open count: " + adgh10.openCount);
+                n.Tag = new TagElement("-", "OpenCount", 0, adgh10.openCount);
+                info.Nodes.Add(n);
+
+                n = new TreeNode("Remaining open count: " + ((adgh10.counter<0) ? "UNLIMITED" : adgh10.counter.ToString()));
+                n.Tag = new TagElement("-", "RemainingCount", 0, adgh10.openCount);
+                info.Nodes.Add(n);
+
+                n = new TreeNode("Expire date: " + ((adgh10.expireDate == 0) ? "NO EXPIRE" : new DateTime(adgh10.expireDate).ToString()));
+                n.Tag = new TagElement("-", "ExpireDate", 0, new DateTime(adgh10.expireDate));
+                info.Nodes.Add(n);
+                
+                TreeNode data = new TreeNode("Data");
+                data.Tag = new TagElement("D");
+                data.ImageIndex = data.SelectedImageIndex = 1;
+                
+                byte[] dataBuffer = Extract(bytes, mainHeadeLen + 32, bytes.Length - mainHeadeLen - 32);
+
+                for(int i=0;i<adh.dataCount;i++)
+                {                    
+                    buff = new byte[Marshal.SizeOf(typeof(ActiveDataDataBlock))];
+                    Array.Copy(dataBuffer, 0, buff, 0, buff.Length);
                     handle = GCHandle.Alloc(buff, GCHandleType.Pinned);
-
-                    ActiveDataFields adFld = (ActiveDataFields)Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(ActiveDataFields));
-
+                    ActiveDataDataBlock addb = (ActiveDataDataBlock)Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(ActiveDataDataBlock));
                     handle.Free();
 
-                    string fieldName = byteArrayToString(adFld.fieldName);
-                    string[] extension = byteArrayToString(adFld.extension).Split('|');
-                    TreeNode n2 = new TreeNode(fieldName + ": " + extension[0]+" ("+adFld.fieldSize+" characters).");
-                    byte[] _b = new byte[adFld.fieldSize];
-                    Array.Copy(bytes, 2048 + dataSize+BufferSize, _b, 0, adFld.fieldSize);
-                    TagElement te = new TagElement(extension[1], fieldName, 0, _b, true);
+                    string dataName = byteArrayToString(addb.name);
+                    string extension = byteArrayToString(addb.extension);
+                    string type = byteArrayToString(addb.type);
+
+                    byte[] _b = new byte[addb.dataLen];
+                    Array.Copy(dataBuffer, buff.Length, _b, 0, _b.Length);
+                    _b = crypto.Decrypt(_b, symmetricKey, iv);
+                    TagElement te = new TagElement(type, dataName, 0, _b, true);
+                    te.extension = extension;
                     te.viewable = true;
-                    te.flag = adFld.flag;
+                    te.flag = Convert.ToUInt32(addb.flag);
+
+                    TreeNode n2 = new TreeNode(dataName + ": " + extension + " (" + _b.Length + " characters/bytes).");                    
                     n2.Tag = te;
 
                     data.Nodes.Add(n2);
 
-                    dataSize = dataSize + BufferSize + adFld.fieldSize;
+                    dataBuffer = Extract(dataBuffer, (int)(buff.Length + addb.dataLen), (int)(dataBuffer.Length - buff.Length - addb.dataLen));
                 }
-                */
+                
                 root.Nodes.Add(info);
-                //root.Nodes.Add(data);
+                root.Nodes.Add(data);
                 treeViewItem.Nodes.Add(root);
-                treeViewItem.ExpandAll();
-                
-                
-                
+                treeViewItem.ExpandAll();                                                
             }
         }
 
@@ -854,6 +882,13 @@ namespace adEditor
             return rv;
         }
 
+        private byte[] Extract(byte[] source, int start, int len)
+        {
+            byte[] b = new byte[len];
+            Array.Copy(source, start, b, 0, len);
+            return b;
+        }
+
         private static void ServerThread(object data)
         {
             NamedPipeServerStream pipeServer =
@@ -861,6 +896,7 @@ namespace adEditor
 
             // Wait for a client to connect
             pipeServer.WaitForConnection();
+            Console.WriteLine("Client connected!!");
 
             try
             {
@@ -874,7 +910,17 @@ namespace adEditor
 
                 ss.WriteString("HLO!");
                 string filename = ss.ReadString();
-                ss.WriteString(privateKey);                
+                Console.WriteLine("HLO written, filename: "+filename);
+                
+                KeyForm kf = new KeyForm(filename, "private");
+                if (kf.ShowDialog() == DialogResult.OK)
+                {
+                    privateKey = (string)kf.Tag;
+                    kf.Dispose();
+                }
+                
+                ss.WriteString(privateKey);   
+                pipeResult = ss.ReadString();                
             }
             catch (IOException e)
             {
