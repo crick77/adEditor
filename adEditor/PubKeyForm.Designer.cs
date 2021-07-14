@@ -47,12 +47,11 @@ namespace adEditor
             // tbPubKey
             // 
             this.tbPubKey.Location = new System.Drawing.Point(88, 30);
-            this.tbPubKey.MaxLength = 348;
+            this.tbPubKey.MaxLength = 0;
             this.tbPubKey.Multiline = true;
             this.tbPubKey.Name = "tbPubKey";
             this.tbPubKey.Size = new System.Drawing.Size(642, 52);
             this.tbPubKey.TabIndex = 1;
-            this.tbPubKey.TextChanged += new System.EventHandler(this.tbPubKey_TextChanged);
             // 
             // bOk
             // 

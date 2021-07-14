@@ -31,7 +31,6 @@ namespace adEditor
         {
             this.tbKey = new System.Windows.Forms.TextBox();
             this.bOk = new System.Windows.Forms.Button();
-            this.bCancel = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // tbKey
@@ -40,14 +39,15 @@ namespace adEditor
             this.tbKey.MaxLength = 348;
             this.tbKey.Multiline = true;
             this.tbKey.Name = "tbKey";
+            this.tbKey.ReadOnly = true;
+            this.tbKey.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.tbKey.Size = new System.Drawing.Size(465, 59);
             this.tbKey.TabIndex = 0;
-            this.tbKey.TextChanged += new System.EventHandler(this.tbKey_TextChanged);
             // 
             // bOk
             // 
             this.bOk.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.bOk.Location = new System.Drawing.Point(71, 108);
+            this.bOk.Location = new System.Drawing.Point(205, 111);
             this.bOk.Name = "bOk";
             this.bOk.Size = new System.Drawing.Size(75, 23);
             this.bOk.TabIndex = 1;
@@ -55,29 +55,18 @@ namespace adEditor
             this.bOk.UseVisualStyleBackColor = true;
             this.bOk.Click += new System.EventHandler(this.bOk_Click);
             // 
-            // bCancel
-            // 
-            this.bCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.bCancel.Location = new System.Drawing.Point(359, 108);
-            this.bCancel.Name = "bCancel";
-            this.bCancel.Size = new System.Drawing.Size(75, 23);
-            this.bCancel.TabIndex = 2;
-            this.bCancel.Text = "&Cancel";
-            this.bCancel.UseVisualStyleBackColor = true;
-            this.bCancel.Click += new System.EventHandler(this.bCancel_Click);
-            // 
             // KeyForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(509, 156);
             this.ControlBox = false;
-            this.Controls.Add(this.bCancel);
             this.Controls.Add(this.bOk);
             this.Controls.Add(this.tbKey);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.Name = "KeyForm";
-            this.Text = "Enter your private key";
+            this.Text = "This is your public key";
+            this.Load += new System.EventHandler(this.KeyForm_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -87,6 +76,5 @@ namespace adEditor
 
         private System.Windows.Forms.TextBox tbKey;
         private System.Windows.Forms.Button bOk;
-        private System.Windows.Forms.Button bCancel;
     }
 }

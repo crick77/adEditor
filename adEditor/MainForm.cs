@@ -12,6 +12,7 @@ using System.IO.Pipes;
 using System.Threading;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using Microsoft.Win32;
 
 namespace adEditor
 {    
@@ -22,7 +23,8 @@ namespace adEditor
         private TreeNode openCountNode = null;
         private TreeNode dataFieldCountNode = null;
         private bool dirty;
-        private static string privateKey;
+        private static RSAParameters privateKey;
+        private static RSAParameters publicKey;
         private static string pipeResult;
         private SHA1Managed sha1 = new SHA1Managed();
         private readonly byte[] iv = new byte[16] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
@@ -105,6 +107,7 @@ namespace adEditor
 
             clearDirty();
             Text = "adEditor - New";
+            saveToolStripMenuItem.Enabled = true;
         }
 
         private void contextMenuStrip_Opening(object sender, CancelEventArgs e)
@@ -449,19 +452,20 @@ namespace adEditor
             {
                 PubKeyForm pbf = new PubKeyForm();
                 if (pbf.ShowDialog() == DialogResult.Cancel) return;
-                string publicKey = (string)pbf.Tag;
+                string _publicKey = (string)pbf.Tag;
                 pbf.Dispose();
 
-                // convert string publickey into byte array
-                string sExp = publicKey.Substring(0, 4);
-                string sMod = publicKey.Substring(4);
+                // get a stream from the string
+                var sr = new System.IO.StringReader(_publicKey);
+                //we need a deserializer
+                var xs = new System.Xml.Serialization.XmlSerializer(typeof(RSAParameters));
                 //get the object back from the stream
-                var pubKey = new RSAParameters();
-                pubKey.Exponent = Convert.FromBase64String(sExp);
-                pubKey.Modulus = Convert.FromBase64String(sMod);
+
+                //get the object back from the stream
+                var pubKey = (RSAParameters)xs.Deserialize(sr);
                 // concatenate Exponent+Modulus
                 byte[] bPubKey = Combine(pubKey.Exponent, pubKey.Modulus);
-
+                
                 int writtenSize = 0;
                 Stream s = new FileStream(saveFileDialog.FileName, FileMode.Create);
                                                 
@@ -654,186 +658,200 @@ namespace adEditor
         {
             if(openFileDialog.ShowDialog() == DialogResult.OK)
             {
-                /*KeyForm kf = new KeyForm(openFileDialog.FileName, "private");
-                if (kf.ShowDialog() == DialogResult.OK)
-                {
-                    privateKey = (string)kf.Tag;
-                    kf.Dispose();
-                }
-                else
-                {
-                    kf.Dispose();
-                    MessageBox.Show("Operation aborted.");
-                    return;
-                }*/
-                
+                // start pipe thread
+                pipeResult = null;
                 Thread t = new Thread(ServerThread);
                 t.Start();                
-                t.Join(500);
-                t = null;
-
-                byte[] bytes;
+                
                 try
                 {
-                    bytes = System.IO.File.ReadAllBytes(openFileDialog.FileName);
-                }
-                catch (Exception ex)
-                {
-                    if (string.Equals(pipeResult, "DATE_EXPIRED"))
+                    byte[] bytes;
+                    try
                     {
-                        MessageBox.Show("You're trying to open the file past the allowed date. Sorry.", "Halt!", MessageBoxButtons.OK, MessageBoxIcon.Stop);
+                        // request I/O
+                        bytes = System.IO.File.ReadAllBytes(openFileDialog.FileName);
+                    }
+                    catch (Exception)
+                    {
+                        // in case of exception, wait pipe to finish
+                        t.Join(500);
+
+                        switch (pipeResult)
+                        {
+                            case "DATE_EXPIRED":
+                                {
+                                    MessageBox.Show("You're trying to open the file past the allowed date. Sorry.", "Halt!", MessageBoxButtons.OK, MessageBoxIcon.Stop);
+                                    break;
+                                }
+                            case "COUNTER_EXPIRED":
+                                {
+                                    MessageBox.Show("Maximum number of opening reached. Sorry.", "Halt!", MessageBoxButtons.OK, MessageBoxIcon.Stop);
+                                    break;
+                                }
+                            case "WRONG_KEY":
+                                {
+                                    throw new CryptographicException();
+                                }
+                            default:
+                                {
+                                    MessageBox.Show("Cannot read the file, there were some problem.", "Halt!", MessageBoxButtons.OK, MessageBoxIcon.Stop);
+                                    break;
+                                }
+                        }
                         return;
                     }
-                    if (string.Equals(pipeResult, "COUNTER_EXPIRED"))
-                    {
-                        MessageBox.Show("Maximum number of opening reached. Sorry.", "Halt!", MessageBoxButtons.OK, MessageBoxIcon.Stop);
-                        return;
-                    }
-                    MessageBox.Show("Cannot read the file, there were some problem.", "Halt!", MessageBoxButtons.OK, MessageBoxIcon.Stop);
-                    return;
-                }
-                
-                MessageBox.Show("Read all file, bytes: " + bytes.Length);
-                Text = "adEditor - " + openFileDialog.FileName;
 
-                byte[] buff = new byte[Marshal.SizeOf(typeof(ActiveDataHeader))];
-                int mainHeadeLen = buff.Length;
-                Array.Copy(bytes, 0, buff, 0, buff.Length);
-                GCHandle handle = GCHandle.Alloc(buff, GCHandleType.Pinned);
-                ActiveDataHeader adh = (ActiveDataHeader)Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(ActiveDataHeader));
-                handle.Free();
+                    MessageBox.Show("Read all file, bytes: " + bytes.Length);
+                    Text = "adEditor - " + openFileDialog.FileName;
 
-                // check magic
-                if (!string.Equals(Encoding.UTF8.GetString(adh.magic), "*AD*") && !string.Equals(Encoding.UTF8.GetString( adh.magic2), "DFB"))
-                {
-                    MessageBox.Show("File is corrupted or is not an ActiveData file", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);                    
-                    return;
-                }
-
-                // check version, actualli ony 1.0 can be handled
-                if(adh.version!=0x10) {
-                    MessageBox.Show("File is a newer format and cannot be handled with this editor. Please update.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
-                
-                // fill the tree
-                treeViewItem.Nodes.Clear();
-
-                TreeNode root = new TreeNode("ActiveData");
-                root.Tag = new TagElement("-");
-                TreeNode info = new TreeNode("Information");
-                info.ImageIndex = 0;
-                info.Tag = new TagElement("-");
-
-                string ver = ((adh.version & 0xF0) >> 4) + "." + (adh.version & 0x0F);
-                TreeNode n = new TreeNode("Version: " + ver);
-                n.ImageIndex = n.SelectedImageIndex = 3;
-                n.Tag = new TagElement("-", "Version", 0, ver);
-                info.Nodes.Add(n);
-
-                DateTime dt = new DateTime(adh.createTime);
-                string c = dt.ToString("dd-MM-yyyy HH:mm:ss");
-                n = new TreeNode("Created: " + c);
-                n.Tag = new TagElement("-", "Created", 0, dt);
-                info.Nodes.Add(n);
-
-                c = Encoding.UTF8.GetString(adh.owner);
-                n = new TreeNode("Owner: " + c);
-                n.Tag = new TagElement("-", "Owner", 64, c);
-                info.Nodes.Add(n);
-                
-                n = new TreeNode("Data field #: " + adh.dataCount);
-                n.Tag = new TagElement("-", "Owner", 0, adh.dataCount);
-                info.Nodes.Add(n);
-
-                // Create crypto objects
-                var csp = new RSACryptoServiceProvider(2048);
-                var crypto = new AesCryptographyService();
-                var privateK = new RSAParameters();
-
-                byte[] prvKey = Convert.FromBase64String(privateKey);
-                privateK.Exponent = Extract(prvKey, 0, 3);
-                privateK.Modulus = Extract(prvKey, 3, 256);
-                privateK.D = Extract(prvKey, 259, 256);                
-                privateK.DP = Extract(prvKey, 515, 128);
-                privateK.DQ = Extract(prvKey, 643, 128);
-                privateK.P = Extract(prvKey, 771, 128);
-                privateK.Q = Extract(prvKey, 899, 128);
-                privateK.InverseQ = Extract(prvKey, 1027, 128);
-
-                // Dectype symmetri key
-                csp.ImportParameters(privateK);
-                byte[] symmetricKey = csp.Decrypt(adh.symmetricKey, false);
-
-                // Read GuardBlock
-                int prevBuffersize = buff.Length;
-                // The buffer for GuardBlock is 22 bytes + PCSK#17 padding to 32 bytes
-                buff = new byte[32];
-                Array.Copy(bytes, prevBuffersize, buff, 0, buff.Length);
-                // decrypt buffer
-                buff = crypto.Decrypt(buff, symmetricKey, iv);
-
-                // convert it back to struct
-                handle = GCHandle.Alloc(buff, GCHandleType.Pinned);                                
-                ActiveDataGuardHeader10 adgh10 = (ActiveDataGuardHeader10)Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(ActiveDataGuardHeader10));
-                handle.Free();
-
-                if(!string.Equals(Encoding.UTF8.GetString(adgh10.magic), "GD10"))
-                {
-                    MessageBox.Show("Some headers are corrupted.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
-
-                n = new TreeNode("Open count: " + adgh10.openCount);
-                n.Tag = new TagElement("-", "OpenCount", 0, adgh10.openCount);
-                info.Nodes.Add(n);
-
-                n = new TreeNode("Remaining open count: " + ((adgh10.counter<0) ? "UNLIMITED" : adgh10.counter.ToString()));
-                n.Tag = new TagElement("-", "RemainingCount", 0, adgh10.openCount);
-                info.Nodes.Add(n);
-
-                n = new TreeNode("Expire date: " + ((adgh10.expireDate == 0) ? "NO EXPIRE" : new DateTime(adgh10.expireDate).ToString()));
-                n.Tag = new TagElement("-", "ExpireDate", 0, new DateTime(adgh10.expireDate));
-                info.Nodes.Add(n);
-                
-                TreeNode data = new TreeNode("Data");
-                data.Tag = new TagElement("D");
-                data.ImageIndex = data.SelectedImageIndex = 1;
-                
-                byte[] dataBuffer = Extract(bytes, mainHeadeLen + 32, bytes.Length - mainHeadeLen - 32);
-
-                for(int i=0;i<adh.dataCount;i++)
-                {                    
-                    buff = new byte[Marshal.SizeOf(typeof(ActiveDataDataBlock))];
-                    Array.Copy(dataBuffer, 0, buff, 0, buff.Length);
-                    handle = GCHandle.Alloc(buff, GCHandleType.Pinned);
-                    ActiveDataDataBlock addb = (ActiveDataDataBlock)Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(ActiveDataDataBlock));
+                    byte[] buff = new byte[Marshal.SizeOf(typeof(ActiveDataHeader))];
+                    int mainHeadeLen = buff.Length;
+                    Array.Copy(bytes, 0, buff, 0, buff.Length);
+                    GCHandle handle = GCHandle.Alloc(buff, GCHandleType.Pinned);
+                    ActiveDataHeader adh = (ActiveDataHeader)Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(ActiveDataHeader));
                     handle.Free();
 
-                    string dataName = byteArrayToString(addb.name);
-                    string extension = byteArrayToString(addb.extension);
-                    string type = byteArrayToString(addb.type);
+                    // check magic
+                    if (!string.Equals(Encoding.UTF8.GetString(adh.magic), "*AD*") && !string.Equals(Encoding.UTF8.GetString(adh.magic2), "DFB"))
+                    {
+                        MessageBox.Show("File is corrupted or is not an ActiveData file", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
 
-                    byte[] _b = new byte[addb.dataLen];
-                    Array.Copy(dataBuffer, buff.Length, _b, 0, _b.Length);
-                    _b = crypto.Decrypt(_b, symmetricKey, iv);
-                    TagElement te = new TagElement(type, dataName, 0, _b, true);
-                    te.extension = extension;
-                    te.viewable = true;
-                    te.flag = Convert.ToUInt32(addb.flag);
+                    // check version, actualli ony 1.0 can be handled
+                    if (adh.version != 0x10)
+                    {
+                        MessageBox.Show("File is a newer format and cannot be handled with this editor. Please update.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
 
-                    TreeNode n2 = new TreeNode(dataName + ": " + extension + " (" + _b.Length + " characters/bytes).");                    
-                    n2.Tag = te;
+                    // fill the tree
+                    treeViewItem.Nodes.Clear();
 
-                    data.Nodes.Add(n2);
+                    TreeNode root = new TreeNode("ActiveData");
+                    root.Tag = new TagElement("-");
+                    TreeNode info = new TreeNode("Information");
+                    info.ImageIndex = 0;
+                    info.Tag = new TagElement("-");
 
-                    dataBuffer = Extract(dataBuffer, (int)(buff.Length + addb.dataLen), (int)(dataBuffer.Length - buff.Length - addb.dataLen));
+                    string ver = ((adh.version & 0xF0) >> 4) + "." + (adh.version & 0x0F);
+                    TreeNode n = new TreeNode("Version: " + ver);
+                    n.ImageIndex = n.SelectedImageIndex = 3;
+                    n.Tag = new TagElement("-", "Version", 0, adh.version);
+                    info.Nodes.Add(n);
+
+                    DateTime dt = new DateTime(adh.createTime);
+                    string c = dt.ToString("dd-MM-yyyy HH:mm:ss");
+                    n = new TreeNode("Created: " + c);
+                    n.Tag = new TagElement("-", "Created", 0, dt);
+                    info.Nodes.Add(n);
+
+                    c = Encoding.UTF8.GetString(adh.owner);
+                    n = new TreeNode("Owner: " + c);
+                    n.Tag = new TagElement("-", "Owner", 64, c);
+                    info.Nodes.Add(n);
+
+                    n = new TreeNode("Data field #: " + adh.dataCount);
+                    n.Tag = new TagElement("-", "Owner", 0, adh.dataCount);
+                    info.Nodes.Add(n);
+
+                    // Create crypto objects
+                    var csp = new RSACryptoServiceProvider(2048);
+                    var crypto = new AesCryptographyService();
+                    /*var privateK = new RSAParameters();
+
+                    byte[] prvKey = Convert.FromBase64String(privateKey);
+                    privateK.Exponent = Extract(prvKey, 0, 3);
+                    privateK.Modulus = Extract(prvKey, 3, 256);
+                    privateK.D = Extract(prvKey, 259, 256);                
+                    privateK.DP = Extract(prvKey, 515, 128);
+                    privateK.DQ = Extract(prvKey, 643, 128);
+                    privateK.P = Extract(prvKey, 771, 128);
+                    privateK.Q = Extract(prvKey, 899, 128);
+                    privateK.InverseQ = Extract(prvKey, 1027, 128);*/
+
+                    // Dectype symmetri key
+                    csp.ImportParameters(privateKey);
+                    byte[] symmetricKey = csp.Decrypt(adh.symmetricKey, false);
+
+                    // Read GuardBlock
+                    int prevBuffersize = buff.Length;
+                    // The buffer for GuardBlock is 22 bytes + PCSK#17 padding to 32 bytes
+                    buff = new byte[32];
+                    Array.Copy(bytes, prevBuffersize, buff, 0, buff.Length);
+                    // decrypt buffer
+                    buff = crypto.Decrypt(buff, symmetricKey, iv);
+
+                    // convert it back to struct
+                    handle = GCHandle.Alloc(buff, GCHandleType.Pinned);
+                    ActiveDataGuardHeader10 adgh10 = (ActiveDataGuardHeader10)Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(ActiveDataGuardHeader10));
+                    handle.Free();
+
+                    if (!string.Equals(Encoding.UTF8.GetString(adgh10.magic), "GD10"))
+                    {
+                        MessageBox.Show("Some headers are corrupted.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+
+                    n = new TreeNode("Open count: " + adgh10.openCount);
+                    n.Tag = new TagElement("-", "OpenCount", 0, adgh10.openCount);
+                    info.Nodes.Add(n);
+
+                    n = new TreeNode("Remaining open count: " + ((adgh10.counter < 0) ? "UNLIMITED" : adgh10.counter.ToString()));
+                    n.Tag = new TagElement("-", "RemainingCount", 0, adgh10.openCount);
+                    info.Nodes.Add(n);
+
+                    n = new TreeNode("Expire date: " + ((adgh10.expireDate == 0) ? "NO EXPIRE" : new DateTime(adgh10.expireDate).ToString()));
+                    n.Tag = new TagElement("-", "ExpireDate", 0, new DateTime(adgh10.expireDate));
+                    info.Nodes.Add(n);
+                    infoNode = info;
+
+                    TreeNode data = new TreeNode("Data");
+                    data.Tag = new TagElement("D");
+                    data.ImageIndex = data.SelectedImageIndex = 1;
+
+                    byte[] dataBuffer = Extract(bytes, mainHeadeLen + 32, bytes.Length - mainHeadeLen - 32);
+
+                    for (int i = 0; i < adh.dataCount; i++)
+                    {
+                        buff = new byte[Marshal.SizeOf(typeof(ActiveDataDataBlock))];
+                        Array.Copy(dataBuffer, 0, buff, 0, buff.Length);
+                        handle = GCHandle.Alloc(buff, GCHandleType.Pinned);
+                        ActiveDataDataBlock addb = (ActiveDataDataBlock)Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(ActiveDataDataBlock));
+                        handle.Free();
+
+                        string dataName = byteArrayToString(addb.name);
+                        string extension = byteArrayToString(addb.extension);
+                        string type = byteArrayToString(addb.type);
+
+                        byte[] _b = new byte[addb.dataLen];
+                        Array.Copy(dataBuffer, buff.Length, _b, 0, _b.Length);
+                        _b = crypto.Decrypt(_b, symmetricKey, iv);
+                        TagElement te = new TagElement(type, dataName, 0, _b, true);
+                        te.extension = extension;
+                        te.viewable = true;
+                        te.flag = Convert.ToUInt32(addb.flag);
+
+                        TreeNode n2 = new TreeNode(dataName + ": " + extension + " (" + _b.Length + " characters/bytes).");
+                        n2.Tag = te;
+
+                        data.Nodes.Add(n2);
+
+                        dataBuffer = Extract(dataBuffer, (int)(buff.Length + addb.dataLen), (int)(dataBuffer.Length - buff.Length - addb.dataLen));
+                    }
+                    dataNode = data;
+
+                    root.Nodes.Add(info);
+                    root.Nodes.Add(data);
+                    treeViewItem.Nodes.Add(root);
+                    treeViewItem.ExpandAll();
+
+                    shareToolStripMenuItem.Enabled = ((adgh10.flags & 1) == 1);
                 }
-                
-                root.Nodes.Add(info);
-                root.Nodes.Add(data);
-                treeViewItem.Nodes.Add(root);
-                treeViewItem.ExpandAll();                                                
+                catch(CryptographicException)
+                {
+                    MessageBox.Show("The file cannot be decrypted. It this file really for you?", "Error", MessageBoxButtons.OK, MessageBoxIcon.Stop);
+                }
             }
         }
 
@@ -902,7 +920,6 @@ namespace adEditor
             {
                 // Read the request from the client. Once the client has
                 // written to the pipe its security token will be available.
-
                 StreamString ss = new StreamString(pipeServer);
 
                 // Verify our identity to the connected client using a
@@ -912,14 +929,13 @@ namespace adEditor
                 string filename = ss.ReadString();
                 Console.WriteLine("HLO written, filename: "+filename);
                 
-                KeyForm kf = new KeyForm(filename, "private");
-                if (kf.ShowDialog() == DialogResult.OK)
-                {
-                    privateKey = (string)kf.Tag;
-                    kf.Dispose();
-                }
-                
-                ss.WriteString(privateKey);   
+                var sw = new System.IO.StringWriter();
+                //we need a serializer
+                var xs = new System.Xml.Serialization.XmlSerializer(typeof(RSAParameters));
+                //serialize the key into the stream
+                xs.Serialize(sw, privateKey);
+
+                ss.WriteString(sw.ToString());   
                 pipeResult = ss.ReadString();                
             }
             catch (IOException e)
@@ -928,6 +944,194 @@ namespace adEditor
             }
             pipeServer.Close();
             pipeServer.Dispose();
+        }
+
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+            RegistryKey key = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\adEditor");
+            if (key == null || key.ValueCount<2)
+            {
+                Registry.CurrentUser.DeleteSubKeyTree(@"SOFTWARE\adEditor", false);
+
+                key = Registry.CurrentUser.CreateSubKey(@"SOFTWARE\adEditor");
+                var csp = new RSACryptoServiceProvider(2048);
+
+                // private key
+                var privKey = csp.ExportParameters(true);
+
+                string privKeyString;
+                {
+                    //we need some buffer
+                    var sw = new System.IO.StringWriter();
+                    //we need a serializer
+                    var _xs = new System.Xml.Serialization.XmlSerializer(typeof(RSAParameters));
+                    //serialize the key into the stream
+                    _xs.Serialize(sw, privKey);
+                    //get the string from the stream
+                    privKeyString = sw.ToString();
+                }
+
+                //and the public key ...
+                var pubKey = csp.ExportParameters(false);
+
+                string pubKeyString;
+                {
+                    //we need some buffer
+                    var sw = new System.IO.StringWriter();
+                    //we need a serializer
+                    var _xs = new System.Xml.Serialization.XmlSerializer(typeof(RSAParameters));
+                    //serialize the key into the stream
+                    _xs.Serialize(sw, pubKey);
+                    //get the string from the stream
+                    pubKeyString = sw.ToString();
+                }
+
+                key.SetValue("pub", pubKeyString);
+                key.SetValue("priv", privKeyString);
+            }
+            
+            //get a stream from the string
+            var sr = new System.IO.StringReader(key.GetValue("priv").ToString());
+            //we need a deserializer
+            var xs = new System.Xml.Serialization.XmlSerializer(typeof(RSAParameters));
+            //get the object back from the stream
+            privateKey = (RSAParameters)xs.Deserialize(sr);
+
+            sr = new System.IO.StringReader(key.GetValue("pub").ToString());
+            //get the object back from the stream
+            publicKey = (RSAParameters)xs.Deserialize(sr);
+
+            key.Close();
+        }
+
+        private void showPublicKeyToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            KeyForm kf = new KeyForm();
+            var sw = new System.IO.StringWriter();
+            //we need a serializer
+            var _xs = new System.Xml.Serialization.XmlSerializer(typeof(RSAParameters));
+            //serialize the key into the stream
+            _xs.Serialize(sw, publicKey);
+            //get the string from the stream
+            kf.Tag = sw.ToString();
+            kf.ShowDialog();
+            kf.Dispose();
+        }
+        private void shareToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (saveFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                PubKeyForm pbf = new PubKeyForm();
+                if (pbf.ShowDialog() == DialogResult.Cancel) return;
+                string _publicKey = (string)pbf.Tag;
+                pbf.Dispose();
+
+                // get a stream from the string
+                var sr = new System.IO.StringReader(_publicKey);
+                //we need a deserializer
+                var xs = new System.Xml.Serialization.XmlSerializer(typeof(RSAParameters));
+                //get the object back from the stream
+                
+                //get the object back from the stream
+                var pubKey = (RSAParameters)xs.Deserialize(sr);
+                // concatenate Exponent+Modulus
+                byte[] bPubKey = Combine(pubKey.Exponent, pubKey.Modulus);
+
+                int writtenSize = 0;
+                Stream s = new FileStream(saveFileDialog.FileName, FileMode.Create);
+
+                // Encrypt with symmetric key the guard block and data bloc
+                // Perform encryption
+                var csp = new RSACryptoServiceProvider(2048);
+                csp.ImportParameters(pubKey);
+
+                // generate a symmetric key and encrypt with public key
+                var aes = Aes.Create();
+                aes.GenerateKey();
+                var crypto = new AesCryptographyService();
+
+                ActiveDataHeader adh = new ActiveDataHeader();
+                // put magic
+                adh.magic = Encoding.UTF8.GetBytes("*AD*");
+                // put version
+                TagElement te = (TagElement)infoNode.Nodes[0].Tag;
+                adh.version = (byte)te.data;
+                // put creation time
+                te = (TagElement)infoNode.Nodes[1].Tag;
+                adh.createTime = ((DateTime)te.data).Ticks;
+                // put owner
+                te = (TagElement)infoNode.Nodes[2].Tag;
+                adh.owner = padStringToByteArray((string)te.data, 64);
+                // put datacount
+                te = (TagElement)infoNode.Nodes[4].Tag;
+                adh.dataCount = Convert.ToInt16((int)te.data);
+
+                // clear hashes and empty fiedls
+                adh.headerHash = new byte[20].Initialize(0);
+                adh.nextHeaderLen = 0;
+
+                adh.publicKey = bPubKey;
+                adh.symmetricKey = csp.Encrypt(aes.Key, false);
+
+                // put end magic                
+                adh.magic2 = Encoding.UTF8.GetBytes("DFB");
+
+                // Actually there is no EXTRA HEADER, so go directly to GUARDHEADER
+
+                ActiveDataGuardHeader10 adgh10 = new ActiveDataGuardHeader10();
+                adgh10.magic = Encoding.UTF8.GetBytes("GD10");
+                te = (TagElement)infoNode.Nodes[4].Tag;
+                adgh10.openCount = (int)te.data;
+                te = (TagElement)infoNode.Nodes[5].Tag;
+                adgh10.counter = (int)te.data;
+                te = (TagElement)infoNode.Nodes[6].Tag;
+                adgh10.expireDate = (te.data != null) ? ((DateTime)te.data).Ticks : 0L;
+                // Lock anyfurther sharing
+                adgh10.flags = 0;
+
+                byte[] guardHeaderBuff = ActiveDataGuardHeader10ToBytes(adgh10);
+
+                // combine buffers and compute hash
+                byte[] headersBuff = Combine(ActiveDataHeaderToBytes(adh), guardHeaderBuff);
+                adh.headerHash = sha1.ComputeHash(headersBuff);
+                // regenerate byte arrays of header
+                byte[] headerBuff = ActiveDataHeaderToBytes(adh);
+
+                guardHeaderBuff = crypto.Encrypt(guardHeaderBuff, aes.Key, iv);
+
+                // save all
+                s.Write(headerBuff, 0, headerBuff.Length);
+                s.Write(guardHeaderBuff, 0, guardHeaderBuff.Length);
+
+                // combine data nodes and save
+                writtenSize += headerBuff.Length + guardHeaderBuff.Length;
+                foreach (TreeNode n in dataNode.Nodes)
+                {
+                    TagElement _te = (TagElement)n.Tag;
+
+                    byte[] data = crypto.Encrypt((byte[])_te.data, aes.Key, iv);
+                    ActiveDataDataBlock addb = new ActiveDataDataBlock();
+                    addb.name = padStringToByteArray(_te.name, 32);
+                    addb.extension = padStringToByteArray(_te.extension, 24);
+                    addb.type = padStringToByteArray(_te.type, 2);
+                    addb.flag = Convert.ToInt16(_te.flag);
+                    addb.dataHash = new byte[20].Initialize(0);
+                    addb.dataLen = (uint)data.Length;
+
+                    byte[] addbBuf = ActiveDataBlockToBytes(addb);
+                    byte[] dataBuffer = Combine(addbBuf, data);
+                    addb.dataHash = sha1.ComputeHash(headersBuff);
+
+                    addbBuf = ActiveDataBlockToBytes(addb);
+                    dataBuffer = Combine(addbBuf, data);
+                    s.Write(dataBuffer, 0, dataBuffer.Length);
+                    writtenSize += dataBuffer.Length;
+                }
+
+                s.Close();
+                
+                MessageBox.Show("File shared! " + writtenSize + " bytes written.");                
+            }
         }
     }
 

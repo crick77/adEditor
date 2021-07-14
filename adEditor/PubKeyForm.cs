@@ -28,15 +28,9 @@ namespace adEditor
             Close();
         }
 
-        private void tbPubKey_TextChanged(object sender, EventArgs e)
-        {
-            bOk.Enabled = (tbPubKey.Text.Length == 348);
-        }
-
         private void PubKeyForm_Load(object sender, EventArgs e)
         {
-            tbPubKey.Text = "";
-            tbPubKey_TextChanged(sender, new EventArgs());
+            tbPubKey.Text = "";           
         }
     }
 }
