@@ -23,6 +23,7 @@ namespace adEditor
         private TreeNode openCountNode = null;
         private TreeNode dataFieldCountNode = null;
         private bool dirty;
+        private Thread pipeThread;
         private static RSAParameters privateKey;
         private static RSAParameters publicKey;
         private static string pipeResult;
@@ -48,10 +49,11 @@ namespace adEditor
             treeViewItem.Nodes.Clear();
 
             TreeNode root = new TreeNode("ActiveData");
+            root.ImageIndex = root.SelectedImageIndex = 15;
             root.Tag = new TagElement("-");
             
             TreeNode info = new TreeNode("Information");
-            info.ImageIndex = 0;
+            info.ImageIndex = info.SelectedImageIndex = 0;
             info.Tag = new TagElement("-");
 
             TreeNode n = new TreeNode("Version: 1.0");
@@ -61,33 +63,40 @@ namespace adEditor
 
             DateTime now = DateTime.Now;
             n = new TreeNode("Created: "+now.ToString("dd-MM-yyyy HH:mm:ss"));
+            n.ImageIndex = n.SelectedImageIndex = 9;
             n.Tag = new TagElement("D", "Created", 0, now);
             info.Nodes.Add(n);
 
             string s = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
             n = new TreeNode("Owner: " + s);
+            n.ImageIndex = n.SelectedImageIndex = 12;
             n.Tag = new TagElement("S", "Owner", 64, s, true);
             info.Nodes.Add(n);
 
             uint openCount = 0;
             n = new TreeNode("Open count: "+ openCount);
+            n.ImageIndex = n.SelectedImageIndex = 11;
             n.Tag = new TagElement("-", "OpenCount", 0, openCount);
             info.Nodes.Add(n);
 
             int expireCount = -1;
-            n = new TreeNode("Expire count: " + (expireCount < 0 ? "NO EXPIRE" : expireCount.ToString()));
+            n = new TreeNode("Expire count: UNLIMITED");
+            n.ImageIndex = n.SelectedImageIndex = 8;
             n.Tag = new TagElement("VC", "Expire count: ", 0, expireCount, true);
             info.Nodes.Add(n);
             
             n = new TreeNode("Expire date: NO EXPIRE");
+            n.ImageIndex = n.SelectedImageIndex = 10;
             n.Tag = new TagElement("VD", "Expire date: ", 0, null, true);
             info.Nodes.Add(n);
 
             n = new TreeNode("Allow resharing: NO");
+            n.ImageIndex = n.SelectedImageIndex = 14;
             n.Tag = new TagElement("W", "Allow resharing: ", 0, false, true);
             info.Nodes.Add(n);
 
             n = new TreeNode("Data field #: 0");
+            n.ImageIndex = n.SelectedImageIndex = 13;
             n.Tag = new TagElement("-", "Data field #: ", 0, 0);
             info.Nodes.Add(n);
             dataFieldCountNode = n;
@@ -252,52 +261,7 @@ namespace adEditor
                         }
                         df.Dispose();
                         break;
-                    }
-                //case "OR": // onread
-                //    {
-                //        GuardsForm gf = populateGuardsForm();
-                //        gf.Text = "onRead event";
-                //        gf.Tag = te.data;                        
-                //        gf.ShowDialog();
-                //        if(gf.DialogResult == DialogResult.OK)
-                //        {
-                //            te.data = gf.Tag;
-                //            computerVarRef();
-                //            setDirty();
-                //        }
-                //        gf.Dispose();
-                //        break;
-                //    }
-                //case "OC": // oncopy
-                //    {
-                //        GuardsForm gf = populateGuardsForm();
-                //        gf.Text = "onCopy event";
-                //        gf.Tag = te.data;                        
-                //        gf.ShowDialog();
-                //        if (gf.DialogResult == DialogResult.OK)
-                //        {
-                //            te.data = gf.Tag;
-                //            computerVarRef();
-                //            setDirty();
-                //        }
-                //        gf.Dispose();
-                //        break;
-                //    }
-                //case "OS": // onshare
-                //    {
-                //        GuardsForm gf = populateGuardsForm();
-                //        gf.Text = "onShare event";
-                //        gf.Tag = te.data;                       
-                //        gf.ShowDialog();
-                //        if (gf.DialogResult == DialogResult.OK)
-                //        {
-                //            te.data = gf.Tag;
-                //            computerVarRef();
-                //            setDirty();                            
-                //        }
-                //        gf.Dispose();
-                //        break;
-                //    }
+                    }                
                 case "W": // switch
                     {
                         bool v = (bool)te.data;
@@ -374,7 +338,7 @@ namespace adEditor
             addDataNode(dataNode, "V", 32, "video", 5);
         }
 
-        private void pDFToolStripMenuItem_Click(object sender, EventArgs e)
+        private void PDFToolStripMenuItem_Click(object sender, EventArgs e)
         {
             addDataNode(dataNode, "P", 32, "PDF", 6);
         }        
@@ -634,6 +598,20 @@ namespace adEditor
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
+            if(pipeThread!=null)
+            {
+                var pipeClient = new NamedPipeClientStream(".", "ad_pipe", PipeDirection.InOut, PipeOptions.None, System.Security.Principal.TokenImpersonationLevel.Impersonation);
+                pipeClient.Connect();
+
+                var ss = new StreamString(pipeClient);
+                string msg = ss.ReadString();
+                if(string.Equals(msg, "HLO!"))
+                {
+                    ss.WriteString("?EXIT?");
+                    pipeClient.Close();
+                    pipeClient.Dispose();
+                }
+            }
             if (dirty)
             {
                 DialogResult dr = checkEmpty();
@@ -660,8 +638,8 @@ namespace adEditor
             {
                 // start pipe thread
                 pipeResult = null;
-                Thread t = new Thread(ServerThread);
-                t.Start();                
+                pipeThread = new Thread(ServerThread);
+                pipeThread.Start();                
                 
                 try
                 {
@@ -669,12 +647,13 @@ namespace adEditor
                     try
                     {
                         // request I/O
-                        bytes = System.IO.File.ReadAllBytes(openFileDialog.FileName);
+                        bytes = System.IO.File.ReadAllBytes(openFileDialog.FileName);                        
                     }
                     catch (Exception)
                     {
                         // in case of exception, wait pipe to finish
-                        t.Join(500);
+                        pipeThread.Join(500);
+                        pipeThread = null;
 
                         switch (pipeResult)
                         {
@@ -729,9 +708,11 @@ namespace adEditor
                     treeViewItem.Nodes.Clear();
 
                     TreeNode root = new TreeNode("ActiveData");
+                    root.ImageIndex = root.SelectedImageIndex = 15;
                     root.Tag = new TagElement("-");
+
                     TreeNode info = new TreeNode("Information");
-                    info.ImageIndex = 0;
+                    info.ImageIndex = info.SelectedImageIndex = 0;
                     info.Tag = new TagElement("-");
 
                     string ver = ((adh.version & 0xF0) >> 4) + "." + (adh.version & 0x0F);
@@ -743,33 +724,25 @@ namespace adEditor
                     DateTime dt = new DateTime(adh.createTime);
                     string c = dt.ToString("dd-MM-yyyy HH:mm:ss");
                     n = new TreeNode("Created: " + c);
+                    n.ImageIndex = n.SelectedImageIndex = 9;
                     n.Tag = new TagElement("-", "Created", 0, dt);
                     info.Nodes.Add(n);
 
                     c = Encoding.UTF8.GetString(adh.owner);
                     n = new TreeNode("Owner: " + c);
+                    n.ImageIndex = n.SelectedImageIndex = 12;
                     n.Tag = new TagElement("-", "Owner", 64, c);
                     info.Nodes.Add(n);
 
                     n = new TreeNode("Data field #: " + adh.dataCount);
+                    n.ImageIndex = n.SelectedImageIndex = 13;
                     n.Tag = new TagElement("-", "Owner", 0, adh.dataCount);
                     info.Nodes.Add(n);
 
                     // Create crypto objects
                     var csp = new RSACryptoServiceProvider(2048);
                     var crypto = new AesCryptographyService();
-                    /*var privateK = new RSAParameters();
-
-                    byte[] prvKey = Convert.FromBase64String(privateKey);
-                    privateK.Exponent = Extract(prvKey, 0, 3);
-                    privateK.Modulus = Extract(prvKey, 3, 256);
-                    privateK.D = Extract(prvKey, 259, 256);                
-                    privateK.DP = Extract(prvKey, 515, 128);
-                    privateK.DQ = Extract(prvKey, 643, 128);
-                    privateK.P = Extract(prvKey, 771, 128);
-                    privateK.Q = Extract(prvKey, 899, 128);
-                    privateK.InverseQ = Extract(prvKey, 1027, 128);*/
-
+                    
                     // Dectype symmetri key
                     csp.ImportParameters(privateKey);
                     byte[] symmetricKey = csp.Decrypt(adh.symmetricKey, false);
@@ -794,14 +767,17 @@ namespace adEditor
                     }
 
                     n = new TreeNode("Open count: " + adgh10.openCount);
+                    n.ImageIndex = n.SelectedImageIndex = 11;
                     n.Tag = new TagElement("-", "OpenCount", 0, adgh10.openCount);
                     info.Nodes.Add(n);
 
                     n = new TreeNode("Remaining open count: " + ((adgh10.counter < 0) ? "UNLIMITED" : adgh10.counter.ToString()));
+                    n.ImageIndex = n.SelectedImageIndex = 8;
                     n.Tag = new TagElement("-", "RemainingCount", 0, adgh10.openCount);
                     info.Nodes.Add(n);
 
                     n = new TreeNode("Expire date: " + ((adgh10.expireDate == 0) ? "NO EXPIRE" : new DateTime(adgh10.expireDate).ToString()));
+                    n.ImageIndex = n.SelectedImageIndex = 10;
                     n.Tag = new TagElement("-", "ExpireDate", 0, new DateTime(adgh10.expireDate));
                     info.Nodes.Add(n);
                     infoNode = info;
@@ -833,6 +809,35 @@ namespace adEditor
                         te.flag = Convert.ToUInt32(addb.flag);
 
                         TreeNode n2 = new TreeNode(dataName + ": " + extension + " (" + _b.Length + " characters/bytes).");
+                        switch (te.type)
+                        {
+                            case "I":
+                                {
+                                    n2.ImageIndex = n.SelectedImageIndex = 4;
+                                    break;
+                                }
+                            case "P":
+                                {
+                                    n2.ImageIndex = n.SelectedImageIndex = 6;
+                                    break;
+                                }
+                            case "V":
+                                {
+                                    n2.ImageIndex = n.SelectedImageIndex = 5;
+                                    break;
+                                }
+                            case "T":
+                                {
+                                    n2.ImageIndex = n.SelectedImageIndex = 2;
+                                    break;
+                                }
+                            default: // unknown data type
+                                {
+                                    n2.ImageIndex = n.SelectedImageIndex = 16;
+                                    break;
+                                }                        
+                        } // switch
+                        
                         n2.Tag = te;
 
                         data.Nodes.Add(n2);
@@ -846,7 +851,8 @@ namespace adEditor
                     treeViewItem.Nodes.Add(root);
                     treeViewItem.ExpandAll();
 
-                    shareToolStripMenuItem.Enabled = ((adgh10.flags & 1) == 1);
+                    // enable sharing if allowed and we have at least 1 opening left
+                    shareToolStripMenuItem.Enabled = ((adgh10.flags & 1) == 1) && (adgh10.counter>0);
                 }
                 catch(CryptographicException)
                 {
@@ -927,6 +933,13 @@ namespace adEditor
 
                 ss.WriteString("HLO!");
                 string filename = ss.ReadString();
+                if(string.Equals(filename, "?EXIT?"))
+                {
+                    Console.WriteLine("EXIT request received. Performing a graceful exit...");
+                    pipeServer.Close();
+                    pipeServer.Dispose();
+                    return;
+                }
                 Console.WriteLine("HLO written, filename: "+filename);
                 
                 var sw = new System.IO.StringWriter();
@@ -1063,8 +1076,8 @@ namespace adEditor
                 te = (TagElement)infoNode.Nodes[2].Tag;
                 adh.owner = padStringToByteArray((string)te.data, 64);
                 // put datacount
-                te = (TagElement)infoNode.Nodes[4].Tag;
-                adh.dataCount = Convert.ToInt16((int)te.data);
+                te = (TagElement)infoNode.Nodes[3].Tag;
+                adh.dataCount = Convert.ToInt16(te.data);
 
                 // clear hashes and empty fiedls
                 adh.headerHash = new byte[20].Initialize(0);
