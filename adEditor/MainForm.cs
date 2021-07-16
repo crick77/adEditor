@@ -78,6 +78,7 @@ namespace adEditor
             n.ImageIndex = n.SelectedImageIndex = 11;
             n.Tag = new TagElement("-", "OpenCount", 0, openCount);
             info.Nodes.Add(n);
+            openCountNode = n;
 
             int expireCount = -1;
             n = new TreeNode("Expire count: UNLIMITED");
